@@ -543,18 +543,18 @@ const OnboardingPage = () => {
   };
 
   return (
-    <div className="app-container relative min-h-screen overflow-hidden">
+    <div className="relative min-h-screen bg-background">
       {/* Background */}
-      <div className="absolute -left-32 top-0 h-64 w-64 rounded-full bg-saffron/10 blur-3xl" />
-      <div className="absolute -right-32 bottom-0 h-64 w-64 rounded-full bg-sage/10 blur-3xl" />
+      <div className="absolute -left-32 top-0 h-64 w-64 rounded-full bg-primary/5 blur-3xl" />
+      <div className="absolute -right-32 bottom-0 h-64 w-64 rounded-full bg-primary/5 blur-3xl" />
 
-      <div className="relative flex min-h-screen flex-col p-6">
+      <div className="relative mx-auto flex min-h-screen max-w-lg flex-col px-6 py-8">
         {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-8 flex items-center justify-between">
           {currentStep > 1 ? (
             <button
               onClick={handleBack}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-foreground transition-colors hover:bg-muted/80"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-foreground transition-colors hover:bg-muted"
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
@@ -573,13 +573,13 @@ const OnboardingPage = () => {
         </div>
 
         {/* Footer */}
-        <div className="mt-6 pb-safe">
+        <div className="mt-8">
           <motion.button
             onClick={handleNext}
             disabled={!canProceed()}
-            className="btn-saffron flex w-full items-center justify-center gap-2 disabled:opacity-50"
-            whileHover={canProceed() ? { scale: 1.02 } : {}}
-            whileTap={canProceed() ? { scale: 0.98 } : {}}
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-foreground py-4 font-medium text-background transition-all hover:opacity-90 disabled:opacity-50"
+            whileHover={canProceed() ? { scale: 1.01 } : {}}
+            whileTap={canProceed() ? { scale: 0.99 } : {}}
           >
             <span>{currentStep === TOTAL_STEPS ? "Start Exploring" : "Continue"}</span>
             <ArrowRight className="h-5 w-5" />

@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Users, ThumbsUp, ThumbsDown, MessageSquare, Heart, X, UserPlus } from "lucide-react";
+import { Users, ThumbsUp, ThumbsDown, MessageSquare, UserPlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import PrivacyControls from "@/components/PrivacyControls";
 
 const mockShortlist = [
@@ -50,55 +51,43 @@ const FamilyModePage = () => {
   const [activeTab, setActiveTab] = useState<"shortlist" | "privacy">("shortlist");
 
   return (
-    <div className="page-container">
+    <div className="min-h-screen bg-background">
       <Navbar />
       
-      <div className="content-container">
-        {/* Mobile Header */}
-        <div className="mb-6 flex items-center justify-between md:hidden">
-          <div className="flex items-center gap-4">
-            <button onClick={() => navigate(-1)} className="icon-btn">
-              <ArrowLeft className="h-5 w-5" />
-            </button>
-            <h1 className="text-xl font-bold">Family Mode</h1>
+      <div className="mx-auto max-w-6xl px-6 pb-24 pt-28 md:px-12 md:pt-32 lg:px-20">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-12 flex flex-col gap-4 md:flex-row md:items-end md:justify-between"
+        >
+          <div>
+            <span className="text-sm font-medium uppercase tracking-widest text-muted-foreground">Collaboration</span>
+            <h1 className="mt-2 font-serif text-4xl font-light text-foreground md:text-5xl">
+              Family <span className="italic text-primary">Mode</span>
+            </h1>
+            <p className="mt-3 text-muted-foreground">Collaborate with your family on finding the perfect match</p>
           </div>
           <button
             onClick={() => setIsFamilyView(!isFamilyView)}
-            className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all ${
-              isFamilyView ? "bg-gradient-primary text-white" : "bg-muted text-muted-foreground"
+            className={`flex items-center gap-2 rounded-full px-6 py-3 text-sm font-medium transition-all ${
+              isFamilyView ? "bg-foreground text-background" : "border border-border text-muted-foreground hover:bg-muted"
             }`}
           >
             <Users className="h-4 w-4" />
-            {isFamilyView ? "Family" : "Personal"}
-          </button>
-        </div>
-
-        {/* Desktop Header */}
-        <div className="mb-8 hidden items-center justify-between md:flex">
-          <div>
-            <h1 className="text-3xl font-bold text-gradient-primary">Family Mode</h1>
-            <p className="mt-2 text-muted-foreground">Collaborate with your family on finding the perfect match</p>
-          </div>
-          <button
-            onClick={() => setIsFamilyView(!isFamilyView)}
-            className={`flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition-all ${
-              isFamilyView ? "bg-gradient-primary text-white shadow-glow" : "bg-muted text-muted-foreground"
-            }`}
-          >
-            <Users className="h-5 w-5" />
             {isFamilyView ? "Family View Active" : "Switch to Family View"}
           </button>
-        </div>
+        </motion.div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-8 lg:grid-cols-3">
           {/* Family Members - Sidebar */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="space-y-6 lg:col-span-1">
             <motion.div 
-              className="section-card"
+              className="rounded-2xl border border-border bg-card p-6"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <h3 className="mb-4 font-semibold">Family Members</h3>
+              <h3 className="mb-4 font-medium">Family Members</h3>
               <div className="space-y-3">
                 {familyMembers.map((member) => (
                   <div key={member.id} className="flex items-center justify-between rounded-xl bg-muted/50 p-3">
@@ -106,11 +95,11 @@ const FamilyModePage = () => {
                       <span className="text-2xl">{member.avatar}</span>
                       <span className="font-medium">{member.name}</span>
                     </div>
-                    <span className={`h-2 w-2 rounded-full ${member.active ? 'bg-green-500' : 'bg-muted-foreground'}`} />
+                    <span className={`h-2.5 w-2.5 rounded-full ${member.active ? 'bg-green-500' : 'bg-muted-foreground/30'}`} />
                   </div>
                 ))}
               </div>
-              <button className="btn-outline mt-4 w-full flex items-center justify-center gap-2">
+              <button className="mt-4 flex w-full items-center justify-center gap-2 rounded-full border border-border py-3 font-medium transition-colors hover:bg-muted">
                 <UserPlus className="h-4 w-4" />
                 Invite Family
               </button>
@@ -118,41 +107,41 @@ const FamilyModePage = () => {
 
             {/* Stats */}
             <motion.div 
-              className="section-card"
+              className="rounded-2xl border border-border bg-card p-6"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <h3 className="mb-4 font-semibold">Activity</h3>
+              <h3 className="mb-4 font-medium">Activity</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-gradient-primary">{mockShortlist.length}</div>
-                  <p className="text-xs text-muted-foreground">Shortlisted</p>
+                  <div className="font-serif text-3xl font-light text-foreground">{mockShortlist.length}</div>
+                  <p className="mt-1 text-xs text-muted-foreground">Shortlisted</p>
                 </div>
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-gradient-primary">8</div>
-                  <p className="text-xs text-muted-foreground">Suggestions</p>
+                  <div className="font-serif text-3xl font-light text-foreground">8</div>
+                  <p className="mt-1 text-xs text-muted-foreground">Suggestions</p>
                 </div>
               </div>
             </motion.div>
           </div>
 
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="space-y-6 lg:col-span-2">
             {/* Tabs */}
-            <div className="flex gap-2 rounded-2xl bg-muted p-1.5">
+            <div className="flex gap-1 rounded-full bg-muted p-1">
               <button
                 onClick={() => setActiveTab("shortlist")}
-                className={`flex-1 rounded-xl py-3 text-sm font-semibold transition-all ${
-                  activeTab === "shortlist" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+                className={`flex-1 rounded-full py-3 text-sm font-medium transition-all ${
+                  activeTab === "shortlist" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
                 }`}
               >
                 Shared Shortlist
               </button>
               <button
                 onClick={() => setActiveTab("privacy")}
-                className={`flex-1 rounded-xl py-3 text-sm font-semibold transition-all ${
-                  activeTab === "privacy" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+                className={`flex-1 rounded-full py-3 text-sm font-medium transition-all ${
+                  activeTab === "privacy" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
                 }`}
               >
                 Privacy Settings
@@ -164,7 +153,7 @@ const FamilyModePage = () => {
                 {mockShortlist.map((profile, index) => (
                   <motion.div 
                     key={profile.id} 
-                    className="section-card"
+                    className="rounded-2xl border border-border bg-card p-5"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
@@ -178,15 +167,17 @@ const FamilyModePage = () => {
                       <div className="flex-1">
                         <div className="flex items-start justify-between">
                           <div>
-                            <h4 className="text-lg font-semibold">{profile.name}, {profile.age}</h4>
+                            <h4 className="text-lg font-medium">{profile.name}, {profile.age}</h4>
                             <p className="text-sm text-muted-foreground">{profile.location}</p>
-                            <span className="badge-primary mt-2">Suggested by {profile.suggestedBy}</span>
+                            <span className="mt-2 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                              Suggested by {profile.suggestedBy}
+                            </span>
                           </div>
                           <div className="flex gap-2">
-                            <button className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-600 hover:bg-green-200 transition-colors">
+                            <button className="flex h-10 w-10 items-center justify-center rounded-full bg-green-50 text-green-600 transition-colors hover:bg-green-100">
                               <ThumbsUp className="h-4 w-4" />
                             </button>
-                            <button className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-red-500 hover:bg-red-200 transition-colors">
+                            <button className="flex h-10 w-10 items-center justify-center rounded-full bg-red-50 text-red-500 transition-colors hover:bg-red-100">
                               <ThumbsDown className="h-4 w-4" />
                             </button>
                           </div>
@@ -214,7 +205,7 @@ const FamilyModePage = () => {
               </div>
             ) : (
               <motion.div 
-                className="section-card"
+                className="rounded-2xl border border-border bg-card p-6"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
               >
@@ -224,6 +215,8 @@ const FamilyModePage = () => {
           </div>
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 };

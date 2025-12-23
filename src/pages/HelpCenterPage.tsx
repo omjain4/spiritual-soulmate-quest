@@ -8,11 +8,11 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 const categories = [
-  { id: "account", label: "Account & Profile", icon: <User className="h-5 w-5" /> },
-  { id: "matching", label: "Matching & Likes", icon: <Heart className="h-5 w-5" /> },
-  { id: "safety", label: "Safety & Privacy", icon: <Shield className="h-5 w-5" /> },
-  { id: "premium", label: "Premium & Billing", icon: <CreditCard className="h-5 w-5" /> },
-  { id: "settings", label: "Settings", icon: <Settings className="h-5 w-5" /> },
+  { id: "account", label: "Account & Profile", icon: <User className="h-4 w-4" /> },
+  { id: "matching", label: "Matching & Likes", icon: <Heart className="h-4 w-4" /> },
+  { id: "safety", label: "Safety & Privacy", icon: <Shield className="h-4 w-4" /> },
+  { id: "premium", label: "Premium & Billing", icon: <CreditCard className="h-4 w-4" /> },
+  { id: "settings", label: "Settings", icon: <Settings className="h-4 w-4" /> },
 ];
 
 const faqs = [
@@ -81,30 +81,30 @@ const HelpCenterPage = () => {
   });
 
   return (
-    <div className="page-container">
+    <div className="min-h-screen bg-background">
       <Navbar />
 
-      <div className="content-container">
+      <div className="mx-auto max-w-6xl px-6 pb-24 pt-28 md:px-12 md:pt-32 lg:px-20">
         {/* Hero */}
         <motion.div
           className="mx-auto max-w-2xl text-center"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <h1 className="text-3xl font-bold md:text-4xl">How can we help you?</h1>
-          <p className="mt-2 text-muted-foreground">
-            Search our help center or browse categories below
-          </p>
+          <span className="text-sm font-medium uppercase tracking-widest text-muted-foreground">Support</span>
+          <h1 className="mt-4 font-serif text-4xl font-light text-foreground md:text-5xl">
+            How can we <span className="italic text-primary">help</span> you?
+          </h1>
 
           {/* Search */}
-          <div className="relative mt-6">
+          <div className="relative mt-8">
             <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
               placeholder="Search for help..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="input-glass pl-12"
+              className="w-full rounded-full border border-border bg-background py-4 pl-12 pr-4 text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none"
             />
           </div>
         </motion.div>
@@ -114,7 +114,7 @@ const HelpCenterPage = () => {
           <button
             onClick={() => setSelectedCategory(null)}
             className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
-              !selectedCategory ? "bg-gradient-primary text-white shadow-glow" : "bg-muted text-muted-foreground hover:bg-muted/80"
+              !selectedCategory ? "bg-foreground text-background" : "bg-muted text-muted-foreground hover:bg-muted/80"
             }`}
           >
             All
@@ -125,7 +125,7 @@ const HelpCenterPage = () => {
               onClick={() => setSelectedCategory(category.id)}
               className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all ${
                 selectedCategory === category.id 
-                  ? "bg-gradient-primary text-white shadow-glow" 
+                  ? "bg-foreground text-background" 
                   : "bg-muted text-muted-foreground hover:bg-muted/80"
               }`}
             >
@@ -136,7 +136,7 @@ const HelpCenterPage = () => {
         </div>
 
         {/* FAQs */}
-        <div className="mx-auto mt-10 max-w-3xl space-y-3">
+        <div className="mx-auto mt-12 max-w-3xl space-y-3">
           <AnimatePresence>
             {filteredFaqs.map((faq, index) => (
               <motion.div
@@ -145,7 +145,7 @@ const HelpCenterPage = () => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ delay: index * 0.03 }}
-                className="section-card"
+                className="rounded-2xl border border-border bg-card p-5"
               >
                 <button
                   onClick={() => setExpandedFaq(expandedFaq === faq.question ? null : faq.question)}
@@ -175,9 +175,9 @@ const HelpCenterPage = () => {
           </AnimatePresence>
 
           {filteredFaqs.length === 0 && (
-            <div className="py-12 text-center">
+            <div className="py-16 text-center">
               <HelpCircle className="mx-auto h-12 w-12 text-muted-foreground/30" />
-              <h3 className="mt-4 font-semibold">No results found</h3>
+              <h3 className="mt-4 font-medium">No results found</h3>
               <p className="mt-1 text-sm text-muted-foreground">
                 Try a different search term or category
               </p>
@@ -186,53 +186,57 @@ const HelpCenterPage = () => {
         </div>
 
         {/* Contact Section */}
-        <div className="mt-16">
-          <h2 className="text-center text-2xl font-bold">Still need help?</h2>
-          <p className="mt-2 text-center text-muted-foreground">
-            Our support team is here to assist you
-          </p>
+        <div className="mt-20">
+          <h2 className="text-center font-serif text-3xl font-light">Still need help?</h2>
+          <p className="mt-2 text-center text-muted-foreground">Our support team is here to assist you</p>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
+          <div className="mt-10 grid gap-6 md:grid-cols-3">
             <motion.div
-              className="section-card text-center"
+              className="rounded-2xl border border-border bg-card p-6 text-center"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-primary text-white">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-foreground text-background">
                 <MessageCircle className="h-7 w-7" />
               </div>
-              <h3 className="mt-4 font-semibold">Live Chat</h3>
+              <h3 className="mt-4 font-medium">Live Chat</h3>
               <p className="mt-1 text-sm text-muted-foreground">Chat with our support team</p>
-              <button className="btn-primary mt-4 w-full">Start Chat</button>
+              <button className="mt-4 w-full rounded-full bg-foreground py-3 font-medium text-background transition-all hover:opacity-90">
+                Start Chat
+              </button>
             </motion.div>
 
             <motion.div
-              className="section-card text-center"
+              className="rounded-2xl border border-border bg-card p-6 text-center"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.35 }}
             >
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-primary text-white">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-foreground text-background">
                 <Mail className="h-7 w-7" />
               </div>
-              <h3 className="mt-4 font-semibold">Email Support</h3>
+              <h3 className="mt-4 font-medium">Email Support</h3>
               <p className="mt-1 text-sm text-muted-foreground">support@jainjodi.com</p>
-              <button className="btn-outline mt-4 w-full">Send Email</button>
+              <button className="mt-4 w-full rounded-full border border-border py-3 font-medium transition-colors hover:bg-muted">
+                Send Email
+              </button>
             </motion.div>
 
             <motion.div
-              className="section-card text-center"
+              className="rounded-2xl border border-border bg-card p-6 text-center"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
             >
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-primary text-white">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-foreground text-background">
                 <Phone className="h-7 w-7" />
               </div>
-              <h3 className="mt-4 font-semibold">Phone Support</h3>
+              <h3 className="mt-4 font-medium">Phone Support</h3>
               <p className="mt-1 text-sm text-muted-foreground">Mon-Sat, 10am-6pm IST</p>
-              <button className="btn-outline mt-4 w-full">+91 1800-XXX-XXXX</button>
+              <button className="mt-4 w-full rounded-full border border-border py-3 font-medium transition-colors hover:bg-muted">
+                +91 1800-XXX-XXXX
+              </button>
             </motion.div>
           </div>
         </div>
