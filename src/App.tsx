@@ -14,6 +14,10 @@ import FamilyModePage from "./pages/FamilyModePage";
 import ProfilePage from "./pages/ProfilePage";
 import WaitlistPage from "./pages/WaitlistPage";
 import ChatPage from "./pages/ChatPage";
+import LikesPage from "./pages/LikesPage";
+import AboutPage from "./pages/AboutPage";
+import HelpCenterPage from "./pages/HelpCenterPage";
+import HowItWorksPage from "./pages/HowItWorksPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +40,10 @@ const App = () => (
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/waitlist" element={<WaitlistPage />} />
             <Route path="/chat" element={<ChatPage />} />
+            <Route path="/likes" element={<LikesPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/help" element={<HelpCenterPage />} />
+            <Route path="/how-it-works" element={<HowItWorksPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
