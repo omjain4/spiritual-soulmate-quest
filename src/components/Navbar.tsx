@@ -3,8 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
   Menu, X, Heart, Search, Clock, User, 
-  MessageCircle, Settings, LogOut, Shield, 
-  Users, ChevronDown, Bell
+  MessageCircle, Shield, Users, Bell
 } from "lucide-react";
 
 const navLinks = [
@@ -17,12 +16,10 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
   const isActive = (path: string) => location.pathname === path;
 
   const handleProfileClick = () => {
-    setProfileDropdownOpen(false);
     navigate("/profile");
   };
 
@@ -88,74 +85,15 @@ const Navbar = () => {
               {/* Profile Dropdown */}
               <div className="relative">
                 <button
-                  onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                  className="flex items-center gap-2 rounded-xl bg-muted/50 py-2 pl-2 pr-3 transition-colors hover:bg-muted"
+                  onClick={handleProfileClick}
+                  className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-primary to-sage transition-transform hover:scale-105"
                 >
-                  <div className="h-8 w-8 overflow-hidden rounded-lg bg-gradient-to-br from-primary to-sage">
-                    <img
-                      src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop"
-                      alt="Profile"
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                  <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${profileDropdownOpen ? "rotate-180" : ""}`} />
+                  <img
+                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop"
+                    alt="Profile"
+                    className="h-full w-full object-cover"
+                  />
                 </button>
-
-                <AnimatePresence>
-                  {profileDropdownOpen && (
-                    <>
-                      {/* Backdrop to close dropdown */}
-                      <div 
-                        className="fixed inset-0 z-40" 
-                        onClick={() => setProfileDropdownOpen(false)} 
-                      />
-                      <motion.div
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-border bg-card shadow-lg"
-                      >
-                        <div className="border-b border-border p-4">
-                          <p className="font-medium">Rahul Jain</p>
-                          <p className="text-sm text-muted-foreground">Premium Member</p>
-                        </div>
-                        <div className="p-2">
-                          <button 
-                            onClick={handleProfileClick}
-                            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors hover:bg-muted"
-                          >
-                            <User className="h-4 w-4" /> My Profile
-                          </button>
-                          <Link 
-                            to="/trust-safety" 
-                            onClick={() => setProfileDropdownOpen(false)}
-                            className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors hover:bg-muted"
-                          >
-                            <Shield className="h-4 w-4" /> Trust & Safety
-                          </Link>
-                          <Link 
-                            to="/family-mode" 
-                            onClick={() => setProfileDropdownOpen(false)}
-                            className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors hover:bg-muted"
-                          >
-                            <Users className="h-4 w-4" /> Family Mode
-                          </Link>
-                          <Link 
-                            to="/premium" 
-                            onClick={() => setProfileDropdownOpen(false)}
-                            className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors hover:bg-muted"
-                          >
-                            <Settings className="h-4 w-4" /> Settings
-                          </Link>
-                          <hr className="my-2 border-border" />
-                          <button className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10">
-                            <LogOut className="h-4 w-4" /> Logout
-                          </button>
-                        </div>
-                      </motion.div>
-                    </>
-                  )}
-                </AnimatePresence>
               </div>
             </div>
           </div>
