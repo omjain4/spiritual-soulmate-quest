@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, Send, Phone, Video, MoreVertical, Image, Smile, Check, CheckCheck } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 
 interface Match {
@@ -23,9 +22,9 @@ interface Message {
 }
 
 const mockMatches: Match[] = [
-  { id: "1", name: "Priya Shah", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop", lastMessage: "Would love to visit Palitana together!", time: "2m", unread: 2, online: true },
+  { id: "1", name: "Priya Shah", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop", lastMessage: "Would love to visit Palit...", time: "2m", unread: 2, online: true },
   { id: "2", name: "Ananya Jain", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop", lastMessage: "That sounds wonderful 🙏", time: "1h", unread: 0, online: false },
-  { id: "3", name: "Kavya Mehta", avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&h=100&fit=crop", lastMessage: "My family would love to meet yours", time: "3h", unread: 0, online: true },
+  { id: "3", name: "Kavya Mehta", avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&h=100&fit=crop", lastMessage: "My family would love to mee...", time: "3h", unread: 0, online: true },
 ];
 
 const mockMessages: Message[] = [
@@ -37,8 +36,7 @@ const mockMessages: Message[] = [
 ];
 
 const ChatPage = () => {
-  const navigate = useNavigate();
-  const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
+  const [selectedMatch, setSelectedMatch] = useState<Match | null>(mockMatches[0]);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState(mockMessages);
 
@@ -55,7 +53,6 @@ const ChatPage = () => {
     setMessage("");
   };
 
-  // Desktop: Side-by-side layout, Mobile: Either list or chat
   const showChatView = selectedMatch !== null;
 
   return (
@@ -63,37 +60,36 @@ const ChatPage = () => {
       <Navbar />
 
       {/* Match List - Desktop Sidebar / Mobile Full Screen */}
-      <div className={`flex-shrink-0 border-r border-border bg-card pt-20 md:w-80 md:pt-28 ${showChatView ? "hidden md:block" : "block"}`}>
+      <div className={`flex-shrink-0 border-r border-border bg-card pt-20 md:w-80 md:pt-24 ${showChatView ? "hidden md:block" : "block"}`}>
         <div className="p-6">
-          <h2 className="font-serif text-2xl font-light">Messages</h2>
-          <div className="mt-6 space-y-2">
+          <h2 className="font-serif text-2xl font-light text-foreground">Messages</h2>
+          <div className="mt-6 space-y-1">
             {mockMatches.map((match) => (
               <motion.button
                 key={match.id}
                 onClick={() => setSelectedMatch(match)}
                 className={`flex w-full items-center gap-3 rounded-xl p-3 text-left transition-colors ${
-                  selectedMatch?.id === match.id ? "bg-primary/10" : "hover:bg-muted"
+                  selectedMatch?.id === match.id ? "bg-primary/5" : "hover:bg-muted/50"
                 }`}
-                whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
               >
-                <div className="relative">
+                <div className="relative flex-shrink-0">
                   <div className="h-12 w-12 overflow-hidden rounded-full">
                     <img src={match.avatar} alt={match.name} className="h-full w-full object-cover" />
                   </div>
                   {match.online && (
-                    <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-card bg-green-500" />
+                    <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-card bg-green-500" />
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between">
-                    <span className="font-medium">{match.name}</span>
+                    <span className="font-medium text-foreground">{match.name}</span>
                     <span className="text-xs text-muted-foreground">{match.time}</span>
                   </div>
                   <p className="truncate text-sm text-muted-foreground">{match.lastMessage}</p>
                 </div>
                 {match.unread > 0 && (
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
+                  <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
                     {match.unread}
                   </span>
                 )}
@@ -108,34 +104,34 @@ const ChatPage = () => {
         {selectedMatch ? (
           <>
             {/* Chat Header */}
-            <div className="flex items-center justify-between border-b border-border bg-card/80 p-4 pt-20 backdrop-blur-lg md:pt-28">
+            <div className="flex items-center justify-between border-b border-border bg-background px-4 py-3 pt-20 md:px-6 md:pt-24">
               <div className="flex items-center gap-3">
                 <button onClick={() => setSelectedMatch(null)} className="flex h-10 w-10 items-center justify-center rounded-full border border-border md:hidden">
                   <ArrowLeft className="h-5 w-5" />
                 </button>
-                <div className="h-10 w-10 overflow-hidden rounded-full">
+                <div className="h-11 w-11 overflow-hidden rounded-full">
                   <img src={selectedMatch.avatar} alt={selectedMatch.name} className="h-full w-full object-cover" />
                 </div>
                 <div>
-                  <p className="font-medium">{selectedMatch.name}</p>
-                  <p className="text-xs text-green-500">{selectedMatch.online ? "Online" : "Last seen recently"}</p>
+                  <p className="font-medium text-foreground">{selectedMatch.name}</p>
+                  <p className="text-sm text-green-500">{selectedMatch.online ? "Online" : "Last seen recently"}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground hover:bg-muted hover:text-foreground">
+                <button className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
                   <Phone className="h-5 w-5" />
                 </button>
-                <button className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground hover:bg-muted hover:text-foreground">
+                <button className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
                   <Video className="h-5 w-5" />
                 </button>
-                <button className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground hover:bg-muted hover:text-foreground">
+                <button className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
                   <MoreVertical className="h-5 w-5" />
                 </button>
               </div>
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto bg-background p-4 md:p-6">
               <div className="mx-auto max-w-2xl space-y-4">
                 {messages.map((msg) => (
                   <motion.div
@@ -145,17 +141,17 @@ const ChatPage = () => {
                     className={`flex ${msg.sender === "me" ? "justify-end" : "justify-start"}`}
                   >
                     <div
-                      className={`max-w-[75%] rounded-2xl px-4 py-3 ${
+                      className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                         msg.sender === "me"
                           ? "bg-foreground text-background"
                           : "bg-muted text-foreground"
                       }`}
                     >
-                      <p className="text-sm">{msg.text}</p>
-                      <div className={`mt-1 flex items-center justify-end gap-1 text-xs ${msg.sender === "me" ? "text-background/60" : "text-muted-foreground"}`}>
+                      <p className="text-sm leading-relaxed">{msg.text}</p>
+                      <div className={`mt-1.5 flex items-center justify-end gap-1 text-xs ${msg.sender === "me" ? "text-background/60" : "text-muted-foreground"}`}>
                         <span>{msg.time}</span>
                         {msg.sender === "me" && (
-                          msg.status === "read" ? <CheckCheck className="h-3 w-3" /> : <Check className="h-3 w-3" />
+                          msg.status === "read" ? <CheckCheck className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />
                         )}
                       </div>
                     </div>
@@ -165,9 +161,9 @@ const ChatPage = () => {
             </div>
 
             {/* Input */}
-            <div className="border-t border-border bg-card p-4">
-              <div className="mx-auto flex max-w-2xl items-center gap-2">
-                <button className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground">
+            <div className="border-t border-border bg-background p-4">
+              <div className="mx-auto flex max-w-2xl items-center gap-3">
+                <button className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
                   <Image className="h-5 w-5" />
                 </button>
                 <div className="relative flex-1">
@@ -177,15 +173,15 @@ const ChatPage = () => {
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSend()}
                     placeholder="Type a message..."
-                    className="w-full rounded-full border border-border bg-background px-5 py-3 pr-12 text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none"
+                    className="w-full rounded-full border border-border bg-muted/30 px-5 py-3 pr-12 text-foreground placeholder:text-muted-foreground focus:border-foreground/30 focus:outline-none"
                   />
-                  <button className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <button className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground">
                     <Smile className="h-5 w-5" />
                   </button>
                 </div>
                 <motion.button
                   onClick={handleSend}
-                  className="flex h-12 w-12 items-center justify-center rounded-full bg-foreground text-background"
+                  className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-foreground text-background"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
