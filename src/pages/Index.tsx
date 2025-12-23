@@ -43,132 +43,121 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      {/* Hero Section */}
-      <section className="relative overflow-hidden px-4 pt-24 md:pt-40">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 -z-10">
-          <div className="absolute -left-32 top-0 h-[600px] w-[600px] rounded-full bg-gradient-to-br from-primary/20 to-transparent blur-3xl" />
-          <div className="absolute -right-32 top-32 h-[500px] w-[500px] rounded-full bg-sage/15 blur-3xl" />
-          <div className="absolute bottom-0 left-1/2 h-[400px] w-[400px] -translate-x-1/2 rounded-full bg-saffron-light/30 blur-3xl" />
-          
-          {/* Geometric Pattern */}
-          <svg className="absolute inset-0 h-full w-full opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
-            <pattern id="jainPattern" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
-              <path d="M30 0L60 30L30 60L0 30Z" fill="none" stroke="currentColor" strokeWidth="1"/>
-              <circle cx="30" cy="30" r="10" fill="none" stroke="currentColor" strokeWidth="1"/>
-            </pattern>
-            <rect width="100%" height="100%" fill="url(#jainPattern)" />
-          </svg>
+      {/* Hero Section - Hinge Style */}
+      <section className="relative min-h-screen overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          <img
+            src="https://images.unsplash.com/photo-1529634806980-85c3dd6d34ac?w=1920&q=80"
+            alt="Couple"
+            className="h-full w-full object-cover"
+          />
+          {/* Gradient Overlays */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/70" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-transparent" />
         </div>
 
-        <div className="mx-auto max-w-6xl">
-          <div className="grid gap-8 lg:grid-cols-12 lg:items-center lg:gap-12">
-            {/* Left Content */}
-            <motion.div
-              className="text-center lg:col-span-7 lg:text-left"
+        {/* Content */}
+        <div className="relative z-10 flex min-h-screen flex-col justify-between px-6 pb-16 pt-32 md:px-12 lg:px-20">
+          {/* Top Badge */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="flex justify-center md:justify-start"
+          >
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-sage" />
+              10,000+ Jain Families Trust Us
+            </span>
+          </motion.div>
+
+          {/* Main Hero Content */}
+          <div className="flex flex-1 flex-col items-center justify-center text-center md:items-start md:text-left">
+            <motion.h1
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="font-serif text-5xl font-light leading-[1.1] tracking-tight text-white md:text-7xl lg:text-8xl"
             >
-              <span className="mb-4 inline-block rounded-full bg-saffron-light px-4 py-1.5 text-sm font-medium text-primary">
-                🙏 Trusted by 10,000+ Jain Families
-              </span>
-              
-              <h1 className="text-3xl font-bold leading-tight tracking-tight md:text-5xl lg:text-6xl">
-                <span className="text-gradient-saffron">Values First.</span>
-                <br />
-                Matches Second.
-              </h1>
-              
-              <p className="mx-auto mt-4 max-w-xl text-base text-muted-foreground md:mt-6 md:text-xl lg:mx-0">
-                The only matrimonial platform that matches you based on spiritual compatibility, 
-                family values, and the Jain way of life.
-              </p>
+              Designed to be
+              <br />
+              <span className="font-normal italic text-saffron-glow">deleted.</span>
+            </motion.h1>
 
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center md:mt-8 lg:justify-start">
-                <motion.button
-                  onClick={() => navigate("/auth")}
-                  className="btn-saffron flex items-center justify-center gap-2 px-6 py-3 text-base md:px-8 md:py-4 md:text-lg"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  Start Your Journey
-                  <ArrowRight className="h-5 w-5" />
-                </motion.button>
-                <button
-                  onClick={() => navigate("/discover")}
-                  className="btn-sage flex items-center justify-center gap-2 px-6 py-3 text-base md:px-8 md:py-4 md:text-lg"
-                >
-                  Browse Profiles
-                </button>
-              </div>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="mt-6 max-w-md text-lg font-light text-white/80 md:text-xl"
+            >
+              The dating app for Jains looking for something real. 
+              Values first. Matches second.
+            </motion.p>
 
-              {/* Stats Row */}
-              <div className="mt-8 flex flex-wrap justify-center gap-6 md:mt-12 lg:justify-start lg:gap-8">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-primary md:text-3xl">500+</div>
-                  <div className="text-xs text-muted-foreground md:text-sm">Successful Matches</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-sage md:text-3xl">92%</div>
-                  <div className="text-xs text-muted-foreground md:text-sm">Match Rate</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-primary md:text-3xl">4.9★</div>
-                  <div className="text-xs text-muted-foreground md:text-sm">User Rating</div>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Right - 1:1 Tracker Widget */}
             <motion.div
-              className="lg:col-span-5"
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+              className="mt-8 flex flex-col gap-4 sm:flex-row"
             >
-              <GlassCard elevated className="space-y-4 md:space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 animate-pulse rounded-full bg-sage" />
-                    <span className="text-sm font-medium text-sage-dark">Live Waiting Room</span>
-                  </div>
-                  <span className="rounded-full bg-sage-light px-2 py-1 text-xs font-medium text-sage-dark">
-                    Real-time
-                  </span>
-                </div>
-
-                <div className="text-center">
-                  <div className="text-4xl font-bold text-gradient-saffron md:text-5xl">{waitingRoomStats.ratio}</div>
-                  <p className="mt-1 text-sm text-muted-foreground">Gender Ratio (M:F)</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 md:gap-4">
-                  <div className="rounded-xl bg-saffron-light p-3 text-center md:p-4">
-                    <div className="text-xl font-bold text-primary md:text-2xl">{waitingRoomStats.males.toLocaleString()}</div>
-                    <p className="text-xs text-muted-foreground">Males Waiting</p>
-                  </div>
-                  <div className="rounded-xl bg-sage-light p-3 text-center md:p-4">
-                    <div className="text-xl font-bold text-sage-dark md:text-2xl">{waitingRoomStats.females.toLocaleString()}</div>
-                    <p className="text-xs text-muted-foreground">Females Waiting</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between rounded-xl border border-border bg-muted/50 p-3 md:p-4">
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4 text-sage md:h-5 md:w-5" />
-                    <span className="text-sm">Average Wait Time</span>
-                  </div>
-                  <span className="font-semibold">{waitingRoomStats.avgWait}</span>
-                </div>
-
-                <p className="text-center text-xs text-muted-foreground">
-                  We maintain a 1:1 ratio for quality matches
-                </p>
-              </GlassCard>
+              <button
+                onClick={() => navigate("/auth")}
+                className="group flex items-center justify-center gap-2 rounded-full bg-white px-8 py-4 text-base font-semibold text-foreground transition-all hover:scale-105 hover:bg-white/90"
+              >
+                Get Started
+                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+              </button>
+              <button
+                onClick={() => navigate("/how-it-works")}
+                className="rounded-full border border-white/30 bg-white/10 px-8 py-4 text-base font-medium text-white backdrop-blur-sm transition-all hover:bg-white/20"
+              >
+                How It Works
+              </button>
             </motion.div>
           </div>
+
+          {/* Bottom Stats */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.8 }}
+            className="flex flex-wrap justify-center gap-8 border-t border-white/10 pt-8 md:justify-start md:gap-12"
+          >
+            <div>
+              <div className="text-3xl font-light text-white md:text-4xl">500+</div>
+              <div className="mt-1 text-sm text-white/60">Successful Matches</div>
+            </div>
+            <div>
+              <div className="text-3xl font-light text-white md:text-4xl">92%</div>
+              <div className="mt-1 text-sm text-white/60">Match Rate</div>
+            </div>
+            <div>
+              <div className="text-3xl font-light text-white md:text-4xl">4.9★</div>
+              <div className="mt-1 text-sm text-white/60">User Rating</div>
+            </div>
+            <div>
+              <div className="text-3xl font-light text-saffron-glow md:text-4xl">{waitingRoomStats.ratio}</div>
+              <div className="mt-1 text-sm text-white/60">Gender Ratio</div>
+            </div>
+          </motion.div>
         </div>
+
+        {/* Scroll Indicator */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.2 }}
+          className="absolute bottom-8 left-1/2 -translate-x-1/2"
+        >
+          <motion.div
+            animate={{ y: [0, 8, 0] }}
+            transition={{ repeat: Infinity, duration: 1.5 }}
+            className="flex h-10 w-6 items-start justify-center rounded-full border-2 border-white/30 p-1"
+          >
+            <div className="h-2 w-1 rounded-full bg-white/60" />
+          </motion.div>
+        </motion.div>
       </section>
 
       {/* Features Section */}
