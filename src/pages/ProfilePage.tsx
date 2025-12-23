@@ -12,6 +12,7 @@ import InterestStamps, { defaultInterestStamps } from "@/components/InterestStam
 import PromptCard from "@/components/PromptCard";
 import PrivacyControls from "@/components/PrivacyControls";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 
 const ProfilePage = () => {
@@ -54,35 +55,44 @@ const ProfilePage = () => {
   };
 
   return (
-    <div className="page-container">
+    <div className="min-h-screen bg-background">
       <Navbar />
       
-      <div className="content-container">
-        {/* Mobile Header */}
-        <div className="mb-6 flex items-center justify-between md:hidden">
-          <button onClick={() => navigate(-1)} className="icon-btn">
+      <div className="mx-auto max-w-6xl px-6 pb-24 pt-28 md:px-12 md:pt-32 lg:px-20">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-10 flex items-center justify-between"
+        >
+          <div>
+            <span className="text-sm font-medium uppercase tracking-widest text-muted-foreground">Your Profile</span>
+            <h1 className="mt-2 font-serif text-4xl font-light text-foreground md:text-5xl">
+              {profileData.name}
+            </h1>
+          </div>
+          <button
+            onClick={() => navigate(-1)}
+            className="flex h-12 w-12 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted md:hidden"
+          >
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <h1 className="text-xl font-bold">My Profile</h1>
-          <button onClick={() => navigate("/premium")} className="icon-btn">
-            <Settings className="h-5 w-5" />
-          </button>
-        </div>
+        </motion.div>
 
         {/* Tabs */}
-        <div className="mb-6 flex gap-2 rounded-2xl bg-muted p-1.5">
+        <div className="mb-10 flex gap-1 rounded-full bg-muted p-1">
           <button
             onClick={() => setActiveTab("profile")}
-            className={`flex-1 rounded-xl py-3 text-sm font-semibold transition-all ${
-              activeTab === "profile" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+            className={`flex-1 rounded-full py-3 text-sm font-medium transition-all ${
+              activeTab === "profile" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
             }`}
           >
             Profile
           </button>
           <button
             onClick={() => setActiveTab("settings")}
-            className={`flex-1 rounded-xl py-3 text-sm font-semibold transition-all ${
-              activeTab === "settings" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+            className={`flex-1 rounded-full py-3 text-sm font-medium transition-all ${
+              activeTab === "settings" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
             }`}
           >
             Settings
@@ -90,11 +100,11 @@ const ProfilePage = () => {
         </div>
 
         {activeTab === "profile" ? (
-          <div className="grid gap-6 lg:grid-cols-3">
+          <div className="grid gap-8 lg:grid-cols-3">
             {/* Profile Header */}
-            <div className="lg:col-span-1 space-y-6">
+            <div className="space-y-6 lg:col-span-1">
               <motion.div 
-                className="section-card text-center"
+                className="rounded-2xl border border-border bg-card p-6 text-center"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
               >
@@ -102,7 +112,7 @@ const ProfilePage = () => {
                   <div className="h-32 w-32 overflow-hidden rounded-3xl">
                     <img src={profileData.photos[0]} alt={profileData.name} className="h-full w-full object-cover" />
                   </div>
-                  <button className="absolute -bottom-2 -right-2 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-primary text-white shadow-lg">
+                  <button className="absolute -bottom-2 -right-2 flex h-10 w-10 items-center justify-center rounded-full bg-foreground text-background shadow-lg transition-transform hover:scale-105">
                     <Camera className="h-5 w-5" />
                   </button>
                   {profileData.isVerified && (
@@ -112,8 +122,8 @@ const ProfilePage = () => {
                   )}
                 </div>
 
-                <h2 className="mt-4 text-2xl font-bold">{profileData.name}, {profileData.age}</h2>
-                <div className="mt-2 flex items-center justify-center gap-2">
+                <h2 className="mt-6 font-serif text-2xl font-light">{profileData.name}, {profileData.age}</h2>
+                <div className="mt-3 flex items-center justify-center gap-2">
                   <RatingBadge rating={profileData.jainRating} size="sm" />
                 </div>
                 
@@ -123,14 +133,14 @@ const ProfilePage = () => {
                   </span>
                 </div>
 
-                <span className="mt-3 inline-block badge-primary">
+                <span className="mt-4 inline-block rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary">
                   {profileData.sect}
                 </span>
 
                 <motion.button
                   onClick={() => navigate("/onboarding")}
-                  className="btn-outline mt-4 w-full flex items-center justify-center gap-2"
-                  whileHover={{ scale: 1.02 }}
+                  className="mt-6 flex w-full items-center justify-center gap-2 rounded-full border border-border py-3 text-sm font-medium transition-colors hover:bg-muted"
+                  whileHover={{ scale: 1.01 }}
                 >
                   <Edit3 className="h-4 w-4" /> Edit Profile
                 </motion.button>
@@ -138,13 +148,13 @@ const ProfilePage = () => {
 
               {/* Photo Gallery */}
               <motion.div 
-                className="section-card"
+                className="rounded-2xl border border-border bg-card p-6"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
               >
                 <div className="mb-4 flex items-center justify-between">
-                  <h3 className="font-semibold">Photos</h3>
+                  <h3 className="font-medium">Photos</h3>
                   <button className="text-sm font-medium text-primary">Manage</button>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
@@ -153,7 +163,7 @@ const ProfilePage = () => {
                       <img src={photo} alt="" className="h-full w-full object-cover" />
                     </div>
                   ))}
-                  <button className="flex aspect-[3/4] flex-col items-center justify-center rounded-xl border-2 border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors">
+                  <button className="flex aspect-[3/4] flex-col items-center justify-center rounded-xl border-2 border-dashed border-border text-muted-foreground transition-colors hover:border-foreground hover:text-foreground">
                     <Camera className="h-6 w-6" />
                     <span className="mt-1 text-xs">Add</span>
                   </button>
@@ -162,30 +172,30 @@ const ProfilePage = () => {
             </div>
 
             {/* Profile Details */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="space-y-6 lg:col-span-2">
               {/* Spiritual Journey */}
               <motion.div 
-                className="section-card"
+                className="rounded-2xl border border-border bg-card p-6"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
               >
                 <div className="mb-4 flex items-center gap-2">
                   <Sparkles className="h-5 w-5 text-primary" />
-                  <h3 className="font-semibold">My Spiritual Journey</h3>
+                  <h3 className="font-medium">My Spiritual Journey</h3>
                 </div>
                 <ChauviharWidget chauviharLevel="moderate" dietaryPreference="strict-jain" />
               </motion.div>
 
               {/* Interest Stamps */}
               <motion.div 
-                className="section-card"
+                className="rounded-2xl border border-border bg-card p-6"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.25 }}
               >
                 <div className="mb-4 flex items-center justify-between">
-                  <h3 className="font-semibold">My Interests</h3>
+                  <h3 className="font-medium">My Interests</h3>
                   <button className="text-sm font-medium text-primary">Edit</button>
                 </div>
                 <InterestStamps 
@@ -197,14 +207,14 @@ const ProfilePage = () => {
 
               {/* Vibe Cards */}
               <motion.div 
-                className="section-card"
+                className="rounded-2xl border border-border bg-card p-6"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
               >
                 <div className="mb-4 flex items-center gap-2">
                   <Heart className="h-5 w-5 text-primary" />
-                  <h3 className="font-semibold">My Vibe</h3>
+                  <h3 className="font-medium">My Vibe</h3>
                 </div>
                 <div className="space-y-3">
                   {profileData.prompts.map((prompt) => (
@@ -215,14 +225,14 @@ const ProfilePage = () => {
 
               {/* Education & Career */}
               <motion.div 
-                className="section-card"
+                className="rounded-2xl border border-border bg-card p-6"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.35 }}
               >
                 <div className="mb-4 flex items-center gap-2">
                   <GraduationCap className="h-5 w-5 text-primary" />
-                  <h3 className="font-semibold">Education & Career</h3>
+                  <h3 className="font-medium">Education & Career</h3>
                 </div>
                 <div className="space-y-3">
                   <div className="flex items-center gap-3 rounded-xl bg-muted/50 p-4">
@@ -244,7 +254,7 @@ const ProfilePage = () => {
           <div className="mx-auto max-w-2xl space-y-6">
             {/* Privacy Settings */}
             <motion.div 
-              className="section-card"
+              className="rounded-2xl border border-border bg-card p-6"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
@@ -253,12 +263,12 @@ const ProfilePage = () => {
 
             {/* Settings Toggles */}
             <motion.div 
-              className="section-card"
+              className="rounded-2xl border border-border bg-card p-6"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <h3 className="mb-4 font-semibold">Account Settings</h3>
+              <h3 className="mb-4 font-medium">Account Settings</h3>
               <div className="space-y-3">
                 {settingsOptions.map((option) => (
                   <div key={option.id} className="flex items-center justify-between rounded-xl bg-muted/50 p-4">
@@ -266,9 +276,9 @@ const ProfilePage = () => {
                       <p className="font-medium">{option.label}</p>
                       <p className="text-xs text-muted-foreground">{option.description}</p>
                     </div>
-                    <div className={`flex h-7 w-12 cursor-pointer items-center rounded-full px-1 transition-colors ${option.enabled ? "bg-gradient-primary" : "bg-muted"}`}>
+                    <div className={`flex h-7 w-12 cursor-pointer items-center rounded-full px-1 transition-colors ${option.enabled ? "bg-foreground" : "bg-muted"}`}>
                       <motion.div
-                        className="h-5 w-5 rounded-full bg-white shadow-sm"
+                        className={`h-5 w-5 rounded-full shadow-sm ${option.enabled ? "bg-background" : "bg-muted-foreground"}`}
                         animate={{ x: option.enabled ? 18 : 0 }}
                       />
                     </div>
@@ -279,12 +289,12 @@ const ProfilePage = () => {
 
             {/* Quick Links */}
             <motion.div 
-              className="section-card"
+              className="rounded-2xl border border-border bg-card p-6"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <h3 className="mb-4 font-semibold">Quick Actions</h3>
+              <h3 className="mb-4 font-medium">Quick Actions</h3>
               <div className="space-y-2">
                 <button onClick={() => navigate("/trust-safety")} className="flex w-full items-center justify-between rounded-xl bg-muted/50 p-4 transition-colors hover:bg-muted">
                   <div className="flex items-center gap-3">
@@ -306,7 +316,7 @@ const ProfilePage = () => {
                 </button>
                 <button onClick={() => navigate("/premium")} className="flex w-full items-center justify-between rounded-xl bg-muted/50 p-4 transition-colors hover:bg-muted">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-primary text-white">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white">
                       <Sparkles className="h-5 w-5" />
                     </div>
                     <span>Upgrade to Premium</span>
@@ -319,7 +329,7 @@ const ProfilePage = () => {
             {/* Logout */}
             <motion.button
               onClick={handleLogout}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-destructive bg-destructive/5 py-4 font-semibold text-destructive transition-colors hover:bg-destructive/10"
+              className="flex w-full items-center justify-center gap-2 rounded-full border-2 border-destructive py-4 font-medium text-destructive transition-colors hover:bg-destructive/5"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
@@ -330,6 +340,8 @@ const ProfilePage = () => {
           </div>
         )}
       </div>
+
+      <Footer />
     </div>
   );
 };

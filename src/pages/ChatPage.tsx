@@ -2,9 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, Send, Phone, Video, MoreVertical, Image, Smile, Check, CheckCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import GlassCard from "@/components/GlassCard";
 import Navbar from "@/components/Navbar";
-import BottomNav from "@/components/BottomNav";
 
 interface Match {
   id: string;
@@ -40,7 +38,6 @@ const mockMessages: Message[] = [
 
 const ChatPage = () => {
   const navigate = useNavigate();
-  const [activeNav, setActiveNav] = useState("messages");
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState(mockMessages);
@@ -67,15 +64,15 @@ const ChatPage = () => {
 
       {/* Match List - Desktop Sidebar / Mobile Full Screen */}
       <div className={`flex-shrink-0 border-r border-border bg-card pt-20 md:w-80 md:pt-28 ${showChatView ? "hidden md:block" : "block"}`}>
-        <div className="p-4">
-          <h2 className="mb-4 text-xl font-bold">Messages</h2>
-          <div className="space-y-2">
+        <div className="p-6">
+          <h2 className="font-serif text-2xl font-light">Messages</h2>
+          <div className="mt-6 space-y-2">
             {mockMatches.map((match) => (
               <motion.button
                 key={match.id}
                 onClick={() => setSelectedMatch(match)}
                 className={`flex w-full items-center gap-3 rounded-xl p-3 text-left transition-colors ${
-                  selectedMatch?.id === match.id ? "bg-saffron-light" : "hover:bg-muted"
+                  selectedMatch?.id === match.id ? "bg-primary/10" : "hover:bg-muted"
                 }`}
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
@@ -85,7 +82,7 @@ const ChatPage = () => {
                     <img src={match.avatar} alt={match.name} className="h-full w-full object-cover" />
                   </div>
                   {match.online && (
-                    <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-card bg-sage" />
+                    <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-card bg-green-500" />
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -113,7 +110,7 @@ const ChatPage = () => {
             {/* Chat Header */}
             <div className="flex items-center justify-between border-b border-border bg-card/80 p-4 pt-20 backdrop-blur-lg md:pt-28">
               <div className="flex items-center gap-3">
-                <button onClick={() => setSelectedMatch(null)} className="flex h-10 w-10 items-center justify-center rounded-full bg-muted md:hidden">
+                <button onClick={() => setSelectedMatch(null)} className="flex h-10 w-10 items-center justify-center rounded-full border border-border md:hidden">
                   <ArrowLeft className="h-5 w-5" />
                 </button>
                 <div className="h-10 w-10 overflow-hidden rounded-full">
@@ -121,17 +118,17 @@ const ChatPage = () => {
                 </div>
                 <div>
                   <p className="font-medium">{selectedMatch.name}</p>
-                  <p className="text-xs text-sage">{selectedMatch.online ? "Online" : "Last seen recently"}</p>
+                  <p className="text-xs text-green-500">{selectedMatch.online ? "Online" : "Last seen recently"}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-muted/80">
+                <button className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground hover:bg-muted hover:text-foreground">
                   <Phone className="h-5 w-5" />
                 </button>
-                <button className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-muted/80">
+                <button className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground hover:bg-muted hover:text-foreground">
                   <Video className="h-5 w-5" />
                 </button>
-                <button className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-muted/80">
+                <button className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground hover:bg-muted hover:text-foreground">
                   <MoreVertical className="h-5 w-5" />
                 </button>
               </div>
@@ -148,14 +145,14 @@ const ChatPage = () => {
                     className={`flex ${msg.sender === "me" ? "justify-end" : "justify-start"}`}
                   >
                     <div
-                      className={`max-w-[75%] rounded-2xl px-4 py-2 ${
+                      className={`max-w-[75%] rounded-2xl px-4 py-3 ${
                         msg.sender === "me"
-                          ? "bg-gradient-to-br from-primary to-saffron-glow text-white"
+                          ? "bg-foreground text-background"
                           : "bg-muted text-foreground"
                       }`}
                     >
                       <p className="text-sm">{msg.text}</p>
-                      <div className={`mt-1 flex items-center justify-end gap-1 text-xs ${msg.sender === "me" ? "text-white/70" : "text-muted-foreground"}`}>
+                      <div className={`mt-1 flex items-center justify-end gap-1 text-xs ${msg.sender === "me" ? "text-background/60" : "text-muted-foreground"}`}>
                         <span>{msg.time}</span>
                         {msg.sender === "me" && (
                           msg.status === "read" ? <CheckCheck className="h-3 w-3" /> : <Check className="h-3 w-3" />
@@ -168,9 +165,9 @@ const ChatPage = () => {
             </div>
 
             {/* Input */}
-            <div className="border-t border-border bg-card p-4 pb-safe">
+            <div className="border-t border-border bg-card p-4">
               <div className="mx-auto flex max-w-2xl items-center gap-2">
-                <button className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground hover:bg-muted">
+                <button className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground">
                   <Image className="h-5 w-5" />
                 </button>
                 <div className="relative flex-1">
@@ -180,17 +177,17 @@ const ChatPage = () => {
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSend()}
                     placeholder="Type a message..."
-                    className="input-glass pr-10"
+                    className="w-full rounded-full border border-border bg-background px-5 py-3 pr-12 text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none"
                   />
-                  <button className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <button className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                     <Smile className="h-5 w-5" />
                   </button>
                 </div>
                 <motion.button
                   onClick={handleSend}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
+                  className="flex h-12 w-12 items-center justify-center rounded-full bg-foreground text-background"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
                   <Send className="h-5 w-5" />
                 </motion.button>
@@ -200,16 +197,12 @@ const ChatPage = () => {
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center text-center">
             <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-muted">
-              <Send className="h-10 w-10 text-muted-foreground" />
+              <Send className="h-10 w-10 text-muted-foreground/50" />
             </div>
-            <h3 className="text-xl font-semibold">Select a conversation</h3>
+            <h3 className="font-serif text-2xl font-light">Select a conversation</h3>
             <p className="mt-2 text-muted-foreground">Choose from your matches to start chatting</p>
           </div>
         )}
-      </div>
-
-      <div className="md:hidden">
-        <BottomNav activeId={activeNav} onNavigate={(id) => { setActiveNav(id); navigate(`/${id === "home" ? "" : id}`); }} />
       </div>
     </div>
   );

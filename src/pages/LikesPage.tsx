@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, X, MessageCircle, Sparkles, Eye, Crown } from "lucide-react";
+import { Heart, X, Sparkles, Eye, Crown, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 interface LikeProfile {
   id: string;
@@ -72,31 +73,37 @@ const LikesPage = () => {
   };
 
   return (
-    <div className="page-container">
+    <div className="min-h-screen bg-background">
       <Navbar />
 
-      <div className="content-container">
+      <div className="mx-auto max-w-6xl px-6 pb-24 pt-28 md:px-12 md:pt-32 lg:px-20">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gradient-primary md:text-4xl">Likes</h1>
-          <p className="mt-1 text-muted-foreground">People who are interested in you</p>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-12"
+        >
+          <span className="text-sm font-medium uppercase tracking-widest text-muted-foreground">Your Admirers</span>
+          <h1 className="mt-2 font-serif text-4xl font-light text-foreground md:text-5xl">
+            People who <span className="italic text-primary">like</span> you
+          </h1>
+        </motion.div>
 
         {/* Tabs */}
-        <div className="mb-6 flex gap-2 rounded-2xl bg-muted p-1.5">
+        <div className="mb-8 flex gap-1 rounded-full bg-muted p-1">
           <button
             onClick={() => setActiveTab("received")}
-            className={`flex-1 rounded-xl py-3 text-sm font-semibold transition-all ${
-              activeTab === "received" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+            className={`flex flex-1 items-center justify-center gap-2 rounded-full py-3 text-sm font-medium transition-all ${
+              activeTab === "received" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
             }`}
           >
-            <Heart className="mr-2 inline h-4 w-4" />
+            <Heart className="h-4 w-4" />
             Received ({likes.length})
           </button>
           <button
             onClick={() => setActiveTab("sent")}
-            className={`flex-1 rounded-xl py-3 text-sm font-semibold transition-all ${
-              activeTab === "sent" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+            className={`flex-1 rounded-full py-3 text-sm font-medium transition-all ${
+              activeTab === "sent" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
             }`}
           >
             Sent (12)
@@ -105,70 +112,76 @@ const LikesPage = () => {
 
         {/* Premium Banner */}
         <motion.div
-          className="mb-6 overflow-hidden rounded-2xl bg-gradient-primary p-5 text-white"
+          className="mb-10 overflow-hidden rounded-2xl bg-foreground p-6 md:p-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
         >
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20">
-              <Eye className="h-6 w-6" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold">See Who Likes You</h3>
-              <p className="text-sm text-white/80">Upgrade to Premium to reveal all admirers</p>
+          <div className="flex flex-col items-start gap-6 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10">
+                <Eye className="h-7 w-7 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-medium text-white">See Who Likes You</h3>
+                <p className="text-white/60">Upgrade to Premium to reveal all admirers</p>
+              </div>
             </div>
             <button 
               onClick={() => navigate("/premium")}
-              className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-primary"
+              className="group flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-foreground transition-all hover:scale-105"
             >
-              Upgrade
+              Upgrade Now
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </button>
           </div>
         </motion.div>
 
         {/* Likes Grid */}
-        <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <AnimatePresence>
             {likes.map((profile, index) => (
               <motion.div
                 key={profile.id}
-                initial={{ opacity: 0, scale: 0.9 }}
+                initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9, x: -100 }}
                 transition={{ delay: index * 0.05 }}
-                className="group relative overflow-hidden rounded-2xl bg-card shadow-sm"
+                className="group relative overflow-hidden rounded-2xl bg-card"
               >
                 <div className="relative aspect-[3/4]">
                   <img
                     src={profile.image}
                     alt={profile.name}
-                    className={`h-full w-full object-cover ${profile.isBlurred ? "blur-lg" : ""}`}
+                    className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 ${profile.isBlurred ? "blur-lg scale-110" : ""}`}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
                   {/* Blurred overlay for premium */}
                   {profile.isBlurred && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/30 backdrop-blur-sm">
-                      <Crown className="h-8 w-8 text-white" />
-                      <p className="mt-2 text-sm font-medium text-white">Premium Only</p>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-sm">
+                        <Crown className="mx-auto h-8 w-8 text-white" />
+                        <p className="mt-2 text-sm font-medium text-white">Premium Only</p>
+                      </div>
                     </div>
                   )}
 
                   {/* Rating */}
                   {!profile.isBlurred && (
-                    <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-gradient-primary px-2 py-1 text-xs font-bold text-white">
+                    <div className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-white/20 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm">
                       <Sparkles className="h-3 w-3" />
                       {profile.rating}%
                     </div>
                   )}
 
                   {/* Info */}
-                  <div className="absolute bottom-0 left-0 right-0 p-3">
-                    <h3 className="text-lg font-bold text-white">
+                  <div className="absolute bottom-0 left-0 right-0 p-4">
+                    <h3 className="text-xl font-medium text-white">
                       {profile.isBlurred ? "???" : `${profile.name}, ${profile.age}`}
                     </h3>
-                    <p className="text-xs text-white/80">{profile.isBlurred ? "---" : profile.location}</p>
-                    <p className="mt-1 text-xs text-white/60">{profile.likedAt}</p>
+                    <p className="text-sm text-white/70">{profile.isBlurred ? "---" : profile.location}</p>
+                    <p className="mt-1 text-xs text-white/50">{profile.likedAt}</p>
                   </div>
                 </div>
 
@@ -177,16 +190,16 @@ const LikesPage = () => {
                   <div className="flex border-t border-border">
                     <button
                       onClick={() => handleReject(profile.id)}
-                      className="flex flex-1 items-center justify-center gap-1 py-3 text-sm text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-500"
+                      className="flex flex-1 items-center justify-center gap-1 py-4 text-muted-foreground transition-colors hover:bg-muted hover:text-destructive"
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-5 w-5" />
                     </button>
                     <div className="w-px bg-border" />
                     <button
                       onClick={() => handleLikeBack(profile.id)}
-                      className="flex flex-1 items-center justify-center gap-1 py-3 text-sm text-primary transition-colors hover:bg-rose-light"
+                      className="flex flex-1 items-center justify-center gap-1 py-4 text-primary transition-colors hover:bg-primary/5"
                     >
-                      <Heart className="h-4 w-4" fill="currentColor" />
+                      <Heart className="h-5 w-5" fill="currentColor" />
                     </button>
                   </div>
                 )}
@@ -200,22 +213,27 @@ const LikesPage = () => {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="py-16 text-center"
+            className="py-20 text-center"
           >
-            <Heart className="mx-auto h-16 w-16 text-muted-foreground/30" />
-            <h3 className="mt-4 text-lg font-semibold">No likes yet</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-muted">
+              <Heart className="h-10 w-10 text-muted-foreground/50" />
+            </div>
+            <h3 className="mt-6 font-serif text-2xl font-light">No likes yet</h3>
+            <p className="mt-2 text-muted-foreground">
               Keep swiping to get more matches!
             </p>
             <button
               onClick={() => navigate("/discover")}
-              className="btn-primary mt-6"
+              className="mt-8 inline-flex items-center gap-2 rounded-full bg-foreground px-8 py-4 font-medium text-background transition-all hover:opacity-90"
             >
               Start Discovering
+              <ArrowRight className="h-5 w-5" />
             </button>
           </motion.div>
         )}
       </div>
+
+      <Footer />
     </div>
   );
 };
