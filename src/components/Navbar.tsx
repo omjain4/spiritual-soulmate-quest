@@ -29,6 +29,7 @@ const Navbar = () => {
   const navLinks = isAuthenticated
     ? [
         { href: "/discover", label: "Discover", icon: Search },
+        { href: "/likes", label: "Likes", icon: Heart },
         { href: "/waitlist", label: "Waitlist", icon: Clock },
       ]
     : [{ href: "/", label: "Home", icon: Heart }];
