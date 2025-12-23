@@ -1,11 +1,13 @@
 import { motion } from "framer-motion";
 import { Home, Search, Heart, MessageCircle, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface NavItem {
   id: string;
   icon: React.ReactNode;
   label: string;
+  authRequired?: boolean;
 }
 
 interface BottomNavProps {
@@ -13,17 +15,22 @@ interface BottomNavProps {
   onNavigate: (id: string) => void;
 }
 
-const navItems: NavItem[] = [
-  { id: "home", icon: <Home className="h-6 w-6" />, label: "Home" },
-  { id: "discover", icon: <Search className="h-6 w-6" />, label: "Discover" },
-  { id: "likes", icon: <Heart className="h-6 w-6" />, label: "Likes" },
-  { id: "messages", icon: <MessageCircle className="h-6 w-6" />, label: "Chat" },
-  { id: "profile", icon: <User className="h-6 w-6" />, label: "Profile" },
-];
-
 const BottomNav = ({ activeId, onNavigate }: BottomNavProps) => {
+  const { isAuthenticated } = useAuth();
+
+  const navItems: NavItem[] = isAuthenticated 
+    ? [
+        { id: "discover", icon: <Search className="h-6 w-6" />, label: "Discover" },
+        { id: "likes", icon: <Heart className="h-6 w-6" />, label: "Likes" },
+        { id: "messages", icon: <MessageCircle className="h-6 w-6" />, label: "Chat" },
+        { id: "profile", icon: <User className="h-6 w-6" />, label: "Profile" },
+      ]
+    : [
+        { id: "home", icon: <Home className="h-6 w-6" />, label: "Home" },
+      ];
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-lg md:relative md:border-0 md:bg-transparent">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-lg md:hidden">
       <div className="mx-auto flex max-w-md items-center justify-around px-4 py-3">
         {navItems.map((item) => (
           <button
@@ -38,8 +45,8 @@ const BottomNav = ({ activeId, onNavigate }: BottomNavProps) => {
           >
             {activeId === item.id && (
               <motion.div
-                layoutId="navIndicator"
-                className="absolute inset-0 rounded-xl bg-saffron-light"
+                layoutId="bottomNavIndicator"
+                className="absolute inset-0 rounded-xl bg-rose-light"
                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
               />
             )}

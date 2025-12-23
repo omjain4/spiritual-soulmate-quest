@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Settings, Bell, Filter, LayoutGrid, Layers } from "lucide-react";
+import { Settings, Filter, LayoutGrid, Layers, Heart, X, MessageCircle, Sparkles } from "lucide-react";
 import ProfileCard from "@/components/ProfileCard";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { ProfileCardSkeleton } from "@/components/SkeletonLoader";
-import { useNavigate } from "react-router-dom";
 
 const mockProfiles = [
   {
@@ -63,28 +62,26 @@ const mockProfiles = [
 ];
 
 const DiscoverPage = () => {
-  const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<"card" | "grid">("card");
   const [isLoading, setIsLoading] = useState(false);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="page-container">
       <Navbar />
 
-      {/* Main Content */}
-      <div className="mx-auto max-w-6xl px-4 pt-20 md:pt-32">
+      <div className="content-container">
         {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gradient-saffron md:text-3xl">Discover</h1>
-            <p className="text-sm text-muted-foreground">Find your perfect match</p>
+            <h1 className="text-3xl font-bold text-gradient-primary md:text-4xl">Discover</h1>
+            <p className="mt-1 text-muted-foreground">Find your perfect match</p>
           </div>
           <div className="flex items-center gap-2">
             {/* View Toggle - Desktop Only */}
-            <div className="hidden rounded-xl bg-muted p-1 md:flex">
+            <div className="hidden rounded-2xl bg-muted p-1.5 md:flex">
               <button
                 onClick={() => setViewMode("card")}
-                className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
+                className={`flex h-10 w-10 items-center justify-center rounded-xl transition-all ${
                   viewMode === "card" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
                 }`}
               >
@@ -92,14 +89,14 @@ const DiscoverPage = () => {
               </button>
               <button
                 onClick={() => setViewMode("grid")}
-                className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
+                className={`flex h-10 w-10 items-center justify-center rounded-xl transition-all ${
                   viewMode === "grid" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
                 }`}
               >
                 <LayoutGrid className="h-5 w-5" />
               </button>
             </div>
-            <button className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground">
+            <button className="icon-btn">
               <Filter className="h-5 w-5" />
             </button>
           </div>
@@ -113,7 +110,7 @@ const DiscoverPage = () => {
             ))}
           </div>
         ) : viewMode === "grid" ? (
-          /* Grid View - Desktop */
+          /* Grid View */
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {mockProfiles.map((profile, index) => (
               <motion.div
@@ -121,27 +118,44 @@ const DiscoverPage = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="cursor-pointer"
+                className="cursor-pointer group"
               >
-                <div className="profile-card overflow-hidden transition-all hover:shadow-glow">
+                <div className="profile-card overflow-hidden transition-all group-hover:shadow-glow">
                   <div className="relative aspect-[3/4]">
                     <img
                       src={profile.imageUrl}
                       alt={profile.name}
-                      className="h-full w-full object-cover"
+                      className="h-full w-full object-cover transition-transform group-hover:scale-105"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                    <div className="absolute right-3 top-3 rounded-full bg-gradient-to-r from-primary to-saffron-glow px-3 py-1 text-sm font-semibold text-white">
-                      {profile.rating}%
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                    
+                    {/* Rating Badge */}
+                    <div className="absolute right-4 top-4">
+                      <div className="flex items-center gap-1 rounded-full bg-gradient-primary px-3 py-1.5 text-sm font-bold text-white shadow-glow">
+                        <Sparkles className="h-3.5 w-3.5" />
+                        {profile.rating}%
+                      </div>
                     </div>
-                    <div className="absolute bottom-0 left-0 right-0 p-4">
-                      <h3 className="text-xl font-bold text-white">
+
+                    {/* Info */}
+                    <div className="absolute bottom-0 left-0 right-0 p-5">
+                      <h3 className="text-2xl font-bold text-white">
                         {profile.name}, {profile.age}
                       </h3>
-                      <p className="text-sm text-white/80">{profile.location}</p>
-                      <span className="mt-2 inline-block rounded-full bg-white/20 px-2 py-0.5 text-xs text-white backdrop-blur-sm">
+                      <p className="mt-1 text-sm text-white/80">{profile.location}</p>
+                      <span className="mt-2 inline-block rounded-full bg-white/20 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
                         {profile.sect}
                       </span>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="absolute bottom-5 right-5 flex gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+                      <button className="flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-red-500 shadow-lg transition-transform hover:scale-110">
+                        <X className="h-5 w-5" />
+                      </button>
+                      <button className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-primary text-white shadow-glow transition-transform hover:scale-110">
+                        <Heart className="h-5 w-5" fill="white" />
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -149,8 +163,8 @@ const DiscoverPage = () => {
             ))}
           </div>
         ) : (
-          /* Card View - Mobile/Swipe Style */
-          <div className="mx-auto max-w-md pb-8">
+          /* Card View */
+          <div className="mx-auto max-w-md space-y-6">
             {mockProfiles.map((profile, index) => (
               <motion.div
                 key={profile.id}
