@@ -1,10 +1,8 @@
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { Filter, LayoutGrid, Layers, Heart, X, MessageCircle, Sparkles, Bookmark, RotateCcw } from "lucide-react";
-import ProfileCard from "@/components/ProfileCard";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { ProfileCardSkeleton } from "@/components/SkeletonLoader";
 import { useToast } from "@/hooks/use-toast";
 
 const initialProfiles = [
@@ -78,7 +76,6 @@ const initialProfiles = [
 const DiscoverPage = () => {
   const { toast } = useToast();
   const [viewMode, setViewMode] = useState<"card" | "grid">("card");
-  const [isLoading, setIsLoading] = useState(false);
   const [profiles, setProfiles] = useState(initialProfiles);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState<"left" | "right" | null>(null);
@@ -139,48 +136,50 @@ const DiscoverPage = () => {
   };
 
   return (
-    <div className="page-container">
+    <div className="min-h-screen bg-background">
       <Navbar />
 
-      <div className="content-container">
+      <div className="mx-auto max-w-6xl px-6 pb-24 pt-28 md:px-12 md:pt-32 lg:px-20">
         {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-10 flex items-end justify-between"
+        >
           <div>
-            <h1 className="text-3xl font-bold text-gradient-primary md:text-4xl">Discover</h1>
-            <p className="mt-1 text-muted-foreground">Find your perfect match</p>
+            <span className="text-sm font-medium uppercase tracking-widest text-muted-foreground">Discover</span>
+            <h1 className="mt-2 font-serif text-4xl font-light text-foreground md:text-5xl">
+              Find your <span className="italic text-primary">match</span>
+            </h1>
           </div>
           <div className="flex items-center gap-2">
             {/* View Toggle - Desktop Only */}
-            <div className="hidden rounded-2xl bg-muted p-1.5 md:flex">
+            <div className="hidden rounded-full bg-muted p-1 md:flex">
               <button
                 onClick={() => setViewMode("card")}
-                className={`flex h-10 w-10 items-center justify-center rounded-xl transition-all ${
-                  viewMode === "card" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+                className={`flex h-10 w-10 items-center justify-center rounded-full transition-all ${
+                  viewMode === "card" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
                 }`}
               >
                 <Layers className="h-5 w-5" />
               </button>
               <button
                 onClick={() => setViewMode("grid")}
-                className={`flex h-10 w-10 items-center justify-center rounded-xl transition-all ${
-                  viewMode === "grid" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+                className={`flex h-10 w-10 items-center justify-center rounded-full transition-all ${
+                  viewMode === "grid" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
                 }`}
               >
                 <LayoutGrid className="h-5 w-5" />
               </button>
             </div>
-            <button className="icon-btn">
+            <button className="flex h-12 w-12 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
               <Filter className="h-5 w-5" />
             </button>
           </div>
-        </div>
+        </motion.div>
 
         {/* Content */}
-        {isLoading ? (
-          <div className="mx-auto max-w-md">
-            <ProfileCardSkeleton />
-          </div>
-        ) : viewMode === "grid" ? (
+        {viewMode === "grid" ? (
           /* Grid View */
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {profiles.map((profile, index) => (
@@ -189,40 +188,40 @@ const DiscoverPage = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="cursor-pointer group"
+                className="group cursor-pointer"
               >
-                <div className="profile-card overflow-hidden transition-all group-hover:shadow-glow">
+                <div className="overflow-hidden rounded-2xl bg-card transition-all hover:shadow-xl">
                   <div className="relative aspect-[3/4]">
                     <img
                       src={profile.imageUrl}
                       alt={profile.name}
-                      className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                     
-                    <div className="absolute right-4 top-4">
-                      <div className="flex items-center gap-1 rounded-full bg-gradient-primary px-3 py-1.5 text-sm font-bold text-white shadow-glow">
-                        <Sparkles className="h-3.5 w-3.5" />
+                    <div className="absolute right-3 top-3">
+                      <div className="flex items-center gap-1 rounded-full bg-white/20 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm">
+                        <Sparkles className="h-3 w-3" />
                         {profile.rating}%
                       </div>
                     </div>
 
                     <div className="absolute bottom-0 left-0 right-0 p-5">
-                      <h3 className="text-2xl font-bold text-white">
+                      <h3 className="text-2xl font-medium text-white">
                         {profile.name}, {profile.age}
                       </h3>
-                      <p className="mt-1 text-sm text-white/80">{profile.location}</p>
-                      <span className="mt-2 inline-block rounded-full bg-white/20 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
+                      <p className="mt-1 text-sm text-white/70">{profile.location}</p>
+                      <span className="mt-3 inline-block rounded-full bg-white/20 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
                         {profile.sect}
                       </span>
                     </div>
 
                     <div className="absolute bottom-5 right-5 flex gap-2 opacity-0 transition-opacity group-hover:opacity-100">
-                      <button className="flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-red-500 shadow-lg transition-transform hover:scale-110">
-                        <X className="h-5 w-5" />
+                      <button className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-red-500 shadow-lg transition-transform hover:scale-110">
+                        <X className="h-6 w-6" />
                       </button>
-                      <button className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-primary text-white shadow-glow transition-transform hover:scale-110">
-                        <Heart className="h-5 w-5" fill="white" />
+                      <button className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-transform hover:scale-110">
+                        <Heart className="h-6 w-6" fill="white" />
                       </button>
                     </div>
                   </div>
@@ -250,7 +249,7 @@ const DiscoverPage = () => {
                     onDragEnd={handleDragEnd}
                     whileDrag={{ cursor: "grabbing" }}
                   >
-                    <div className="profile-card h-full overflow-hidden">
+                    <div className="h-full overflow-hidden rounded-3xl bg-card shadow-2xl">
                       <div className="relative h-full">
                         <img
                           src={currentProfile.imageUrl}
@@ -262,13 +261,13 @@ const DiscoverPage = () => {
 
                         {/* Swipe indicators */}
                         <motion.div
-                          className="absolute left-4 top-4 rounded-xl bg-red-500 px-4 py-2 text-lg font-bold text-white opacity-0"
+                          className="absolute left-6 top-6 rounded-xl bg-red-500 px-4 py-2 text-lg font-bold text-white"
                           style={{ opacity: direction === "left" ? 1 : 0 }}
                         >
                           NOPE
                         </motion.div>
                         <motion.div
-                          className="absolute right-4 top-4 rounded-xl bg-green-500 px-4 py-2 text-lg font-bold text-white opacity-0"
+                          className="absolute right-6 top-6 rounded-xl bg-green-500 px-4 py-2 text-lg font-bold text-white"
                           style={{ opacity: direction === "right" ? 1 : 0 }}
                         >
                           LIKE
@@ -276,7 +275,7 @@ const DiscoverPage = () => {
 
                         {/* Rating Badge */}
                         <div className="absolute right-4 top-4">
-                          <div className="flex items-center gap-1 rounded-full bg-gradient-primary px-4 py-2 text-sm font-bold text-white shadow-glow">
+                          <div className="flex items-center gap-1 rounded-full bg-white/20 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm">
                             <Sparkles className="h-4 w-4" />
                             {currentProfile.rating}% Match
                           </div>
@@ -284,19 +283,19 @@ const DiscoverPage = () => {
 
                         {/* Profile Info */}
                         <div className="absolute bottom-0 left-0 right-0 p-6">
-                          <h2 className="text-3xl font-bold text-white">
+                          <h2 className="font-serif text-4xl font-light text-white">
                             {currentProfile.name}, {currentProfile.age}
                           </h2>
-                          <p className="mt-1 text-white/80">{currentProfile.location}</p>
-                          <span className="mt-2 inline-block rounded-full bg-white/20 px-3 py-1 text-sm font-medium text-white backdrop-blur-sm">
+                          <p className="mt-1 text-white/70">{currentProfile.location}</p>
+                          <span className="mt-3 inline-block rounded-full bg-white/20 px-4 py-1.5 text-sm font-medium text-white backdrop-blur-sm">
                             {currentProfile.sect}
                           </span>
 
                           {/* Prompts */}
                           <div className="mt-4 space-y-2">
                             {currentProfile.prompts.slice(0, 1).map((prompt, idx) => (
-                              <div key={idx} className="rounded-xl bg-white/10 p-3 backdrop-blur-sm">
-                                <p className="text-xs text-white/70">{prompt.question}</p>
+                              <div key={idx} className="rounded-xl bg-white/10 p-4 backdrop-blur-sm">
+                                <p className="text-xs text-white/60">{prompt.question}</p>
                                 <p className="mt-1 text-sm text-white">{prompt.answer}</p>
                               </div>
                             ))}
@@ -314,7 +313,7 @@ const DiscoverPage = () => {
                     <div className="flex h-24 w-24 items-center justify-center rounded-full bg-muted">
                       <Heart className="h-12 w-12 text-muted-foreground/50" />
                     </div>
-                    <h3 className="mt-6 text-xl font-bold">No more profiles</h3>
+                    <h3 className="mt-6 font-serif text-2xl font-light">No more profiles</h3>
                     <p className="mt-2 text-muted-foreground">Check back later for more matches!</p>
                     <button
                       onClick={() => {
@@ -322,7 +321,7 @@ const DiscoverPage = () => {
                         setCurrentIndex(0);
                         setLikedProfiles([]);
                       }}
-                      className="btn-primary mt-6"
+                      className="mt-8 rounded-full bg-foreground px-8 py-4 font-medium text-background transition-all hover:opacity-90"
                     >
                       Start Over
                     </button>
@@ -333,11 +332,11 @@ const DiscoverPage = () => {
 
             {/* Action Buttons */}
             {currentProfile && (
-              <div className="mt-6 flex items-center justify-center gap-4">
+              <div className="mt-8 flex items-center justify-center gap-4">
                 <motion.button
                   onClick={handleUndo}
                   disabled={currentIndex === 0}
-                  className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground transition-all hover:bg-muted/80 disabled:opacity-30"
+                  className="flex h-12 w-12 items-center justify-center rounded-full border border-border text-muted-foreground transition-all hover:bg-muted disabled:opacity-30"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                 >
@@ -355,7 +354,7 @@ const DiscoverPage = () => {
 
                 <motion.button
                   onClick={handleSave}
-                  className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-blue-500 transition-all hover:bg-blue-50"
+                  className="flex h-12 w-12 items-center justify-center rounded-full border border-border text-blue-500 transition-all hover:bg-blue-50"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                 >
@@ -364,7 +363,7 @@ const DiscoverPage = () => {
 
                 <motion.button
                   onClick={() => handleSwipe("right")}
-                  className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-primary text-white shadow-glow transition-all"
+                  className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-all"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                 >
@@ -372,7 +371,7 @@ const DiscoverPage = () => {
                 </motion.button>
 
                 <motion.button
-                  className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-purple-500 transition-all hover:bg-purple-50"
+                  className="flex h-12 w-12 items-center justify-center rounded-full border border-border text-purple-500 transition-all hover:bg-purple-50"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                 >
@@ -383,11 +382,11 @@ const DiscoverPage = () => {
 
             {/* Progress indicator */}
             {currentProfile && (
-              <div className="mt-4 flex justify-center gap-1">
+              <div className="mt-6 flex justify-center gap-1.5">
                 {profiles.map((_, idx) => (
                   <div
                     key={idx}
-                    className={`h-1 w-8 rounded-full transition-colors ${
+                    className={`h-1.5 w-8 rounded-full transition-colors ${
                       idx < currentIndex
                         ? "bg-primary"
                         : idx === currentIndex
