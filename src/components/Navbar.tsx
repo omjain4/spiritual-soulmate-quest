@@ -21,6 +21,11 @@ const Navbar = () => {
 
   const isActive = (path: string) => location.pathname === path;
 
+  const handleProfileClick = () => {
+    setProfileDropdownOpen(false);
+    navigate("/profile");
+  };
+
   return (
     <>
       {/* Desktop Navbar */}
@@ -98,35 +103,57 @@ const Navbar = () => {
 
                 <AnimatePresence>
                   {profileDropdownOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-2xl border border-border bg-card shadow-lg"
-                    >
-                      <div className="border-b border-border p-4">
-                        <p className="font-medium">Rahul Jain</p>
-                        <p className="text-sm text-muted-foreground">Premium Member</p>
-                      </div>
-                      <div className="p-2">
-                        <Link to="/profile" className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors hover:bg-muted">
-                          <User className="h-4 w-4" /> My Profile
-                        </Link>
-                        <Link to="/trust-safety" className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors hover:bg-muted">
-                          <Shield className="h-4 w-4" /> Trust & Safety
-                        </Link>
-                        <Link to="/family-mode" className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors hover:bg-muted">
-                          <Users className="h-4 w-4" /> Family Mode
-                        </Link>
-                        <Link to="/premium" className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors hover:bg-muted">
-                          <Settings className="h-4 w-4" /> Settings
-                        </Link>
-                        <hr className="my-2 border-border" />
-                        <button className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10">
-                          <LogOut className="h-4 w-4" /> Logout
-                        </button>
-                      </div>
-                    </motion.div>
+                    <>
+                      {/* Backdrop to close dropdown */}
+                      <div 
+                        className="fixed inset-0 z-40" 
+                        onClick={() => setProfileDropdownOpen(false)} 
+                      />
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-border bg-card shadow-lg"
+                      >
+                        <div className="border-b border-border p-4">
+                          <p className="font-medium">Rahul Jain</p>
+                          <p className="text-sm text-muted-foreground">Premium Member</p>
+                        </div>
+                        <div className="p-2">
+                          <button 
+                            onClick={handleProfileClick}
+                            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors hover:bg-muted"
+                          >
+                            <User className="h-4 w-4" /> My Profile
+                          </button>
+                          <Link 
+                            to="/trust-safety" 
+                            onClick={() => setProfileDropdownOpen(false)}
+                            className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors hover:bg-muted"
+                          >
+                            <Shield className="h-4 w-4" /> Trust & Safety
+                          </Link>
+                          <Link 
+                            to="/family-mode" 
+                            onClick={() => setProfileDropdownOpen(false)}
+                            className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors hover:bg-muted"
+                          >
+                            <Users className="h-4 w-4" /> Family Mode
+                          </Link>
+                          <Link 
+                            to="/premium" 
+                            onClick={() => setProfileDropdownOpen(false)}
+                            className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors hover:bg-muted"
+                          >
+                            <Settings className="h-4 w-4" /> Settings
+                          </Link>
+                          <hr className="my-2 border-border" />
+                          <button className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10">
+                            <LogOut className="h-4 w-4" /> Logout
+                          </button>
+                        </div>
+                      </motion.div>
+                    </>
                   )}
                 </AnimatePresence>
               </div>
@@ -141,7 +168,7 @@ const Navbar = () => {
         initial={{ y: -100 }}
         animate={{ y: 0 }}
       >
-        <div className="flex items-center justify-between bg-background/80 px-4 py-3 backdrop-blur-lg">
+        <div className="flex items-center justify-between bg-background/90 px-4 py-3 backdrop-blur-lg">
           <Link to="/" className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-saffron-glow">
               <Heart className="h-4 w-4 text-white" fill="white" />
@@ -202,6 +229,20 @@ const Navbar = () => {
                   className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-muted"
                 >
                   <MessageCircle className="h-5 w-5" /> Messages
+                </Link>
+                <Link
+                  to="/trust-safety"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-muted"
+                >
+                  <Shield className="h-5 w-5" /> Trust & Safety
+                </Link>
+                <Link
+                  to="/family-mode"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-muted"
+                >
+                  <Users className="h-5 w-5" /> Family Mode
                 </Link>
               </div>
             </motion.div>
