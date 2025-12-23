@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { 
-  ArrowLeft, User, Camera, Edit3, 
+  ArrowLeft, User, Camera, Edit3, Save, X,
   MapPin, Briefcase, GraduationCap, Heart, Sparkles,
-  Settings, Users, ChevronRight, Check, LogOut
+  Settings, Users, ChevronRight, Check, LogOut, Calendar
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import RatingBadge from "@/components/RatingBadge";
@@ -14,20 +14,31 @@ import PrivacyControls from "@/components/PrivacyControls";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<"profile" | "settings">("profile");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingPrompt, setEditingPrompt] = useState<string | null>(null);
+  const [tempPromptAnswer, setTempPromptAnswer] = useState("");
 
-  const profileData = {
+  const [profileData, setProfileData] = useState({
     name: user?.name || "User",
+    firstName: user?.name?.split(" ")[0] || "User",
+    lastName: user?.name?.split(" ")[1] || "",
     age: 28,
+    birthDate: "1996-05-15",
+    gender: "male",
     location: "Mumbai, Maharashtra",
     occupation: "Software Engineer",
     company: "Tech Corp",
     education: "MBA, IIM Ahmedabad",
-    sect: "Shwetambar - Murtipujak",
+    sect: "shwetambar-murtipujak",
     jainRating: 88,
     isVerified: true,
     photos: [
@@ -41,7 +52,26 @@ const ProfilePage = () => {
       { id: "3", prompt: "On weekends you'll find me...", answer: "At the temple or hiking with friends" },
     ],
     interests: ["pilgrimage", "meditation", "fitness", "business"],
-  };
+  });
+
+  const [editForm, setEditForm] = useState({
+    firstName: profileData.firstName,
+    lastName: profileData.lastName,
+    birthDate: profileData.birthDate,
+    gender: profileData.gender,
+    location: profileData.location,
+    occupation: profileData.occupation,
+    company: profileData.company,
+    education: profileData.education,
+    sect: profileData.sect,
+  });
+
+  const sects = [
+    { id: "digambar", title: "Digambar" },
+    { id: "shwetambar-sthanakvasi", title: "Shwetambar - Sthanakvasi" },
+    { id: "shwetambar-murtipujak", title: "Shwetambar - Murtipujak" },
+    { id: "shwetambar-terapanthi", title: "Shwetambar - Terapanthi" },
+  ];
 
   const settingsOptions = [
     { id: "incognito", label: "Incognito Mode", description: "Browse without being seen", enabled: false },
@@ -49,9 +79,66 @@ const ProfilePage = () => {
     { id: "notifications", label: "Push Notifications", description: "Get notified of new matches", enabled: true },
   ];
 
+  const handleSaveProfile = () => {
+    setProfileData({
+      ...profileData,
+      firstName: editForm.firstName,
+      lastName: editForm.lastName,
+      name: `${editForm.firstName} ${editForm.lastName}`,
+      birthDate: editForm.birthDate,
+      gender: editForm.gender,
+      location: editForm.location,
+      occupation: editForm.occupation,
+      company: editForm.company,
+      education: editForm.education,
+      sect: editForm.sect,
+    });
+    setIsEditing(false);
+  };
+
+  const handleCancelEdit = () => {
+    setEditForm({
+      firstName: profileData.firstName,
+      lastName: profileData.lastName,
+      birthDate: profileData.birthDate,
+      gender: profileData.gender,
+      location: profileData.location,
+      occupation: profileData.occupation,
+      company: profileData.company,
+      education: profileData.education,
+      sect: profileData.sect,
+    });
+    setIsEditing(false);
+  };
+
+  const handlePromptEdit = (promptId: string) => {
+    const prompt = profileData.prompts.find(p => p.id === promptId);
+    if (prompt) {
+      setEditingPrompt(promptId);
+      setTempPromptAnswer(prompt.answer);
+    }
+  };
+
+  const handlePromptSave = () => {
+    if (editingPrompt) {
+      setProfileData({
+        ...profileData,
+        prompts: profileData.prompts.map(p => 
+          p.id === editingPrompt ? { ...p, answer: tempPromptAnswer } : p
+        ),
+      });
+      setEditingPrompt(null);
+      setTempPromptAnswer("");
+    }
+  };
+
   const handleLogout = () => {
     logout();
     navigate("/");
+  };
+
+  const getSectTitle = (sectId: string) => {
+    return sects.find(s => s.id === sectId)?.title || sectId;
   };
 
   return (
@@ -68,7 +155,7 @@ const ProfilePage = () => {
           <div>
             <span className="text-sm font-medium uppercase tracking-widest text-muted-foreground">Your Profile</span>
             <h1 className="mt-2 font-serif text-4xl font-light text-foreground md:text-5xl">
-              {profileData.name}
+              {profileData.firstName} {profileData.lastName}
             </h1>
           </div>
           <button
@@ -122,7 +209,7 @@ const ProfilePage = () => {
                   )}
                 </div>
 
-                <h2 className="mt-6 font-serif text-2xl font-light">{profileData.name}, {profileData.age}</h2>
+                <h2 className="mt-6 font-serif text-2xl font-light">{profileData.firstName} {profileData.lastName}, {profileData.age}</h2>
                 <div className="mt-3 flex items-center justify-center gap-2">
                   <RatingBadge rating={profileData.jainRating} size="sm" />
                 </div>
@@ -134,11 +221,11 @@ const ProfilePage = () => {
                 </div>
 
                 <span className="mt-4 inline-block rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary">
-                  {profileData.sect}
+                  {getSectTitle(profileData.sect)}
                 </span>
 
                 <motion.button
-                  onClick={() => navigate("/onboarding")}
+                  onClick={() => setIsEditing(true)}
                   className="mt-6 flex w-full items-center justify-center gap-2 rounded-full border border-border py-3 text-sm font-medium transition-colors hover:bg-muted"
                   whileHover={{ scale: 1.01 }}
                 >
@@ -218,7 +305,12 @@ const ProfilePage = () => {
                 </div>
                 <div className="space-y-3">
                   {profileData.prompts.map((prompt) => (
-                    <PromptCard key={prompt.id} prompt={prompt.prompt} answer={prompt.answer} />
+                    <PromptCard 
+                      key={prompt.id} 
+                      prompt={prompt.prompt} 
+                      answer={prompt.answer}
+                      onEdit={() => handlePromptEdit(prompt.id)}
+                    />
                   ))}
                 </div>
               </motion.div>
@@ -340,6 +432,193 @@ const ProfilePage = () => {
           </div>
         )}
       </div>
+
+      {/* Edit Profile Modal */}
+      <Dialog open={isEditing} onOpenChange={setIsEditing}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit3 className="h-5 w-5 text-primary" />
+              Edit Profile
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-firstName" className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-primary" />
+                  First Name
+                </Label>
+                <Input
+                  id="edit-firstName"
+                  value={editForm.firstName}
+                  onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-lastName">Last Name</Label>
+                <Input
+                  id="edit-lastName"
+                  value={editForm.lastName}
+                  onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <User className="h-4 w-4 text-primary" />
+                Gender
+              </Label>
+              <Select
+                value={editForm.gender}
+                onValueChange={(value) => setEditForm({ ...editForm, gender: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select gender" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="male">Male</SelectItem>
+                  <SelectItem value="female">Female</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-birthDate" className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-primary" />
+                Date of Birth
+              </Label>
+              <Input
+                id="edit-birthDate"
+                type="date"
+                value={editForm.birthDate}
+                onChange={(e) => setEditForm({ ...editForm, birthDate: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-location" className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-primary" />
+                Location
+              </Label>
+              <Input
+                id="edit-location"
+                value={editForm.location}
+                onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-occupation" className="flex items-center gap-2">
+                <Briefcase className="h-4 w-4 text-primary" />
+                Occupation
+              </Label>
+              <Input
+                id="edit-occupation"
+                value={editForm.occupation}
+                onChange={(e) => setEditForm({ ...editForm, occupation: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-company">Company</Label>
+              <Input
+                id="edit-company"
+                value={editForm.company}
+                onChange={(e) => setEditForm({ ...editForm, company: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-education" className="flex items-center gap-2">
+                <GraduationCap className="h-4 w-4 text-primary" />
+                Education
+              </Label>
+              <Input
+                id="edit-education"
+                value={editForm.education}
+                onChange={(e) => setEditForm({ ...editForm, education: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                Sect
+              </Label>
+              <Select
+                value={editForm.sect}
+                onValueChange={(value) => setEditForm({ ...editForm, sect: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select sect" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sects.map((sect) => (
+                    <SelectItem key={sect.id} value={sect.id}>{sect.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button
+              onClick={handleCancelEdit}
+              className="flex flex-1 items-center justify-center gap-2 rounded-full border border-border py-3 font-medium transition-colors hover:bg-muted"
+            >
+              <X className="h-4 w-4" />
+              Cancel
+            </button>
+            <button
+              onClick={handleSaveProfile}
+              className="flex flex-1 items-center justify-center gap-2 rounded-full bg-foreground py-3 font-medium text-background transition-colors hover:opacity-90"
+            >
+              <Save className="h-4 w-4" />
+              Save Changes
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Prompt Modal */}
+      <Dialog open={!!editingPrompt} onOpenChange={(open) => !open && setEditingPrompt(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Prompt</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <p className="text-sm font-medium text-foreground">
+              {profileData.prompts.find(p => p.id === editingPrompt)?.prompt}
+            </p>
+            <textarea
+              value={tempPromptAnswer}
+              onChange={(e) => setTempPromptAnswer(e.target.value)}
+              placeholder="Type your answer..."
+              className="min-h-24 w-full resize-none rounded-xl border border-border bg-background p-4 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              autoFocus
+            />
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={() => setEditingPrompt(null)}
+              className="flex flex-1 items-center justify-center gap-2 rounded-full border border-border py-3 font-medium transition-colors hover:bg-muted"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handlePromptSave}
+              className="flex flex-1 items-center justify-center gap-2 rounded-full bg-foreground py-3 font-medium text-background transition-colors hover:opacity-90"
+            >
+              Save
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>
