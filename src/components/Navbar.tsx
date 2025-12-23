@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
@@ -7,29 +7,54 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
+interface Notification {
+  id: string;
+  type: "like" | "match" | "message";
+  title: string;
+  description: string;
+  avatar: string;
+  time: string;
+  read: boolean;
+}
+
+const mockNotifications: Notification[] = [
+  { id: "1", type: "like", title: "New Like!", description: "Priya Shah liked your profile", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop", time: "2m ago", read: false },
+  { id: "2", type: "match", title: "It's a Match!", description: "You matched with Ananya Jain", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop", time: "1h ago", read: false },
+  { id: "3", type: "message", title: "New Message", description: "Kavya: My family would love to...", avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&h=100&fit=crop", time: "3h ago", read: true },
+];
+
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState(mockNotifications);
+  const notificationRef = useRef<HTMLDivElement>(null);
   const { user, isAuthenticated, logout } = useAuth();
 
-  // Check if on homepage for transparent navbar
   const isHomePage = location.pathname === "/";
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
-    };
+    const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setNotificationsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const isActive = (path: string) => location.pathname === path;
 
-  const handleProfileClick = () => {
-    navigate("/profile");
-  };
+  const handleProfileClick = () => navigate("/profile");
 
   const handleLogout = () => {
     logout();
@@ -37,7 +62,17 @@ const Navbar = () => {
     setMobileMenuOpen(false);
   };
 
-  // Nav links based on auth state
+  const markAllAsRead = () => {
+    setNotifications(notifications.map(n => ({ ...n, read: true })));
+  };
+
+  const handleNotificationClick = (notification: Notification) => {
+    setNotifications(notifications.map(n => n.id === notification.id ? { ...n, read: true } : n));
+    setNotificationsOpen(false);
+    if (notification.type === "message") navigate("/chat");
+    else if (notification.type === "like" || notification.type === "match") navigate("/likes");
+  };
+
   const navLinks = isAuthenticated
     ? [
         { href: "/discover", label: "Discover", icon: Search },
@@ -49,18 +84,9 @@ const Navbar = () => {
         { href: "/how-it-works", label: "How It Works", icon: Heart },
       ];
 
-  // Navbar style based on scroll and page
-  const navbarBg = isHomePage && !scrolled 
-    ? "bg-transparent" 
-    : "bg-background/80 backdrop-blur-xl border-b border-border/50";
-
-  const textColor = isHomePage && !scrolled 
-    ? "text-white" 
-    : "text-foreground";
-
-  const logoColor = isHomePage && !scrolled 
-    ? "text-white" 
-    : "text-foreground";
+  const navbarBg = isHomePage && !scrolled ? "bg-transparent" : "bg-background/80 backdrop-blur-xl border-b border-border/50";
+  const textColor = isHomePage && !scrolled ? "text-white" : "text-foreground";
+  const logoColor = isHomePage && !scrolled ? "text-white" : "text-foreground";
 
   return (
     <>
@@ -72,7 +98,6 @@ const Navbar = () => {
         transition={{ duration: 0.5 }}
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4 lg:px-12">
-          {/* Logo */}
           <Link to="/" className="flex items-center gap-3">
             <div className={`flex h-10 w-10 items-center justify-center rounded-full ${isHomePage && !scrolled ? "bg-white/10 backdrop-blur-sm" : "bg-primary/10"}`}>
               <Heart className={`h-5 w-5 ${isHomePage && !scrolled ? "text-white" : "text-primary"}`} fill="currentColor" />
@@ -80,7 +105,6 @@ const Navbar = () => {
             <span className={`font-serif text-xl font-light ${logoColor}`}>Jain Jodi</span>
           </Link>
 
-          {/* Nav Links */}
           <div className="flex items-center gap-1">
             {navLinks.map((link) => (
               <Link
@@ -104,17 +128,79 @@ const Navbar = () => {
             ))}
           </div>
 
-          {/* Right Side */}
           <div className="flex items-center gap-3">
             {isAuthenticated ? (
               <>
-                {/* Notifications */}
-                <button className={`relative flex h-10 w-10 items-center justify-center rounded-full transition-colors ${isHomePage && !scrolled ? "bg-white/10 text-white hover:bg-white/20" : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-primary" />
-                </button>
+                {/* Notifications Dropdown */}
+                <div className="relative" ref={notificationRef}>
+                  <button
+                    onClick={() => setNotificationsOpen(!notificationsOpen)}
+                    className={`relative flex h-10 w-10 items-center justify-center rounded-full transition-colors ${isHomePage && !scrolled ? "bg-white/10 text-white hover:bg-white/20" : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+                  >
+                    <Bell className="h-5 w-5" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </button>
 
-                {/* Messages */}
+                  <AnimatePresence>
+                    {notificationsOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 top-12 w-80 overflow-hidden rounded-2xl border border-border bg-card shadow-xl"
+                      >
+                        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                          <h3 className="font-medium text-foreground">Notifications</h3>
+                          {unreadCount > 0 && (
+                            <button onClick={markAllAsRead} className="text-xs text-primary hover:underline">
+                              Mark all as read
+                            </button>
+                          )}
+                        </div>
+                        <div className="max-h-80 overflow-y-auto">
+                          {notifications.length > 0 ? (
+                            notifications.map((notification) => (
+                              <button
+                                key={notification.id}
+                                onClick={() => handleNotificationClick(notification)}
+                                className={`flex w-full items-start gap-3 p-4 text-left transition-colors hover:bg-muted/50 ${!notification.read ? "bg-primary/5" : ""}`}
+                              >
+                                <div className="relative flex-shrink-0">
+                                  <div className="h-10 w-10 overflow-hidden rounded-full">
+                                    <img src={notification.avatar} alt="" className="h-full w-full object-cover" />
+                                  </div>
+                                  {!notification.read && (
+                                    <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-primary" />
+                                  )}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm font-medium text-foreground">{notification.title}</p>
+                                  <p className="truncate text-xs text-muted-foreground">{notification.description}</p>
+                                  <p className="mt-1 text-xs text-muted-foreground/70">{notification.time}</p>
+                                </div>
+                              </button>
+                            ))
+                          ) : (
+                            <div className="p-6 text-center text-sm text-muted-foreground">No notifications</div>
+                          )}
+                        </div>
+                        <Link
+                          to="/likes"
+                          onClick={() => setNotificationsOpen(false)}
+                          className="block border-t border-border px-4 py-3 text-center text-sm font-medium text-primary hover:bg-muted/50"
+                        >
+                          View all activity
+                        </Link>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
                 <Link
                   to="/chat"
                   className={`relative flex h-10 w-10 items-center justify-center rounded-full transition-colors ${isHomePage && !scrolled ? "bg-white/10 text-white hover:bg-white/20" : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"}`}
@@ -122,7 +208,6 @@ const Navbar = () => {
                   <MessageCircle className="h-5 w-5" />
                 </Link>
 
-                {/* Profile */}
                 <button
                   onClick={handleProfileClick}
                   className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full ring-2 ring-white/20 transition-transform hover:scale-105"
@@ -134,7 +219,6 @@ const Navbar = () => {
                   />
                 </button>
 
-                {/* Logout */}
                 <button
                   onClick={handleLogout}
                   className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${isHomePage && !scrolled ? "text-white/70 hover:text-white" : "text-muted-foreground hover:text-destructive"}`}
@@ -146,9 +230,7 @@ const Navbar = () => {
               <Link
                 to="/auth"
                 className={`flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-medium transition-all hover:scale-105 ${
-                  isHomePage && !scrolled 
-                    ? "bg-white text-foreground" 
-                    : "bg-foreground text-background"
+                  isHomePage && !scrolled ? "bg-white text-foreground" : "bg-foreground text-background"
                 }`}
               >
                 Get Started
@@ -174,10 +256,57 @@ const Navbar = () => {
 
           <div className="flex items-center gap-2">
             {isAuthenticated && (
-              <button className={`relative flex h-9 w-9 items-center justify-center rounded-full ${isHomePage && !scrolled ? "bg-white/10 text-white" : "bg-muted text-muted-foreground"}`}>
-                <Bell className="h-5 w-5" />
-                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary" />
-              </button>
+              <div className="relative" ref={notificationRef}>
+                <button
+                  onClick={() => setNotificationsOpen(!notificationsOpen)}
+                  className={`relative flex h-9 w-9 items-center justify-center rounded-full ${isHomePage && !scrolled ? "bg-white/10 text-white" : "bg-muted text-muted-foreground"}`}
+                >
+                  <Bell className="h-5 w-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                <AnimatePresence>
+                  {notificationsOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 top-12 w-72 overflow-hidden rounded-2xl border border-border bg-card shadow-xl"
+                    >
+                      <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                        <h3 className="font-medium text-foreground">Notifications</h3>
+                        {unreadCount > 0 && (
+                          <button onClick={markAllAsRead} className="text-xs text-primary hover:underline">
+                            Mark all read
+                          </button>
+                        )}
+                      </div>
+                      <div className="max-h-64 overflow-y-auto">
+                        {notifications.map((notification) => (
+                          <button
+                            key={notification.id}
+                            onClick={() => handleNotificationClick(notification)}
+                            className={`flex w-full items-start gap-3 p-3 text-left transition-colors hover:bg-muted/50 ${!notification.read ? "bg-primary/5" : ""}`}
+                          >
+                            <div className="h-9 w-9 flex-shrink-0 overflow-hidden rounded-full">
+                              <img src={notification.avatar} alt="" className="h-full w-full object-cover" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-foreground">{notification.title}</p>
+                              <p className="truncate text-xs text-muted-foreground">{notification.description}</p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             )}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -188,7 +317,6 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Mobile Menu Overlay */}
         <AnimatePresence>
           {mobileMenuOpen && (
             <motion.div
@@ -204,9 +332,7 @@ const Navbar = () => {
                     to={link.href}
                     onClick={() => setMobileMenuOpen(false)}
                     className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors ${
-                      isActive(link.href)
-                        ? "bg-primary/10 text-primary"
-                        : "text-muted-foreground hover:bg-muted"
+                      isActive(link.href) ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"
                     }`}
                   >
                     <link.icon className="h-5 w-5" />
@@ -217,50 +343,27 @@ const Navbar = () => {
                 {isAuthenticated ? (
                   <>
                     <hr className="my-3 border-border" />
-                    <Link
-                      to="/profile"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-muted"
-                    >
+                    <Link to="/profile" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-muted">
                       <User className="h-5 w-5" /> My Profile
                     </Link>
-                    <Link
-                      to="/chat"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-muted"
-                    >
+                    <Link to="/chat" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-muted">
                       <MessageCircle className="h-5 w-5" /> Messages
                     </Link>
-                    <Link
-                      to="/trust-safety"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-muted"
-                    >
+                    <Link to="/trust-safety" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-muted">
                       <Shield className="h-5 w-5" /> Trust & Safety
                     </Link>
-                    <Link
-                      to="/family-mode"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-muted"
-                    >
+                    <Link to="/family-mode" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-muted">
                       <Users className="h-5 w-5" /> Family Mode
                     </Link>
                     <hr className="my-3 border-border" />
-                    <button
-                      onClick={handleLogout}
-                      className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-destructive hover:bg-destructive/10"
-                    >
+                    <button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-destructive hover:bg-destructive/10">
                       <LogOut className="h-5 w-5" /> Logout
                     </button>
                   </>
                 ) : (
                   <>
                     <hr className="my-3 border-border" />
-                    <Link
-                      to="/auth"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center justify-center gap-2 rounded-full bg-foreground px-4 py-3 text-sm font-medium text-background"
-                    >
+                    <Link to="/auth" onClick={() => setMobileMenuOpen(false)} className="flex items-center justify-center gap-2 rounded-full bg-foreground px-4 py-3 text-sm font-medium text-background">
                       <LogIn className="h-5 w-5" /> Get Started
                     </Link>
                   </>
