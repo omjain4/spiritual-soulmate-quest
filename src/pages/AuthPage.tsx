@@ -1,27 +1,67 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Phone, Mail, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { Phone, Mail, ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
 import GlassCard from "@/components/GlassCard";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const [authMethod, setAuthMethod] = useState<"phone" | "email">("phone");
+  const [authMethod, setAuthMethod] = useState<"phone" | "email">("email");
   const [showPassword, setShowPassword] = useState(false);
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
   const [otp, setOtp] = useState("");
   const [showOtp, setShowOtp] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { login, signup, isAuthenticated } = useAuth();
+  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Redirect if already logged in
+  if (isAuthenticated) {
+    navigate("/discover");
+    return null;
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (authMethod === "phone" && !showOtp) {
       setShowOtp(true);
       return;
     }
-    navigate("/onboarding");
+
+    setIsLoading(true);
+    
+    try {
+      if (isLogin) {
+        await login(email, password);
+        toast({
+          title: "Welcome back!",
+          description: "You have successfully logged in.",
+        });
+        navigate("/discover");
+      } else {
+        await signup(email, password, name || "User");
+        toast({
+          title: "Account created!",
+          description: "Let's complete your profile.",
+        });
+        navigate("/onboarding");
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -163,6 +203,20 @@ const AuthPage = () => {
                 exit={{ opacity: 0, x: -10 }}
                 className="space-y-4"
               >
+                {!isLogin && (
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-foreground">
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Enter your name"
+                      className="input-glass"
+                    />
+                  </div>
+                )}
                 <div>
                   <label className="mb-2 block text-sm font-medium text-foreground">
                     Email
@@ -206,12 +260,19 @@ const AuthPage = () => {
 
           <motion.button
             type="submit"
-            className="btn-saffron flex w-full items-center justify-center gap-2"
+            disabled={isLoading}
+            className="btn-saffron flex w-full items-center justify-center gap-2 disabled:opacity-50"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            <span>{isLogin ? "Continue" : "Create Account"}</span>
-            <ArrowRight className="h-5 w-5" />
+            {isLoading ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <>
+                <span>{isLogin ? "Continue" : "Create Account"}</span>
+                <ArrowRight className="h-5 w-5" />
+              </>
+            )}
           </motion.button>
         </form>
 
