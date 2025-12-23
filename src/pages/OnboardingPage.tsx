@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, Sparkles, User, Calendar, MapPin, Briefcase, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Sparkles, User, Calendar, MapPin, Briefcase, Check, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -10,6 +10,8 @@ import PromptCard from "@/components/PromptCard";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { basicInfoSchema, BasicInfoFormData } from "@/lib/validations";
+import { z } from "zod";
 
 const TOTAL_STEPS = 6;
 
@@ -77,6 +79,8 @@ const prompts = [
   { id: "looking", prompt: "I'm looking for someone who...", answer: "" },
 ];
 
+type FieldErrors = Partial<Record<keyof BasicInfoFormData, string>>;
+
 const OnboardingPage = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
@@ -88,6 +92,7 @@ const OnboardingPage = () => {
     location: "",
     occupation: "",
   });
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [selectedSect, setSelectedSect] = useState<string | null>(null);
   const [quizAnswers, setQuizAnswers] = useState<Record<number, string>>({});
   const [currentQuizIndex, setCurrentQuizIndex] = useState(0);
@@ -95,7 +100,57 @@ const OnboardingPage = () => {
   const [editingPrompt, setEditingPrompt] = useState<string | null>(null);
   const [tempPromptAnswer, setTempPromptAnswer] = useState("");
 
+  const validateBasicInfo = (): boolean => {
+    try {
+      basicInfoSchema.parse(basicInfo);
+      setFieldErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const errors: FieldErrors = {};
+        error.errors.forEach((err) => {
+          const field = err.path[0] as keyof BasicInfoFormData;
+          errors[field] = err.message;
+        });
+        setFieldErrors(errors);
+      }
+      return false;
+    }
+  };
+
+  const validateField = (field: keyof BasicInfoFormData, value: string) => {
+    try {
+      const fieldSchema = basicInfoSchema.shape[field];
+      fieldSchema.parse(value);
+      setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        setFieldErrors((prev) => ({ ...prev, [field]: error.errors[0].message }));
+      }
+    }
+  };
+
+  const handleInputChange = (field: keyof BasicInfoFormData, value: string) => {
+    setBasicInfo({ ...basicInfo, [field]: value });
+    // Clear error when user starts typing
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+  };
+
+  const handleInputBlur = (field: keyof BasicInfoFormData) => {
+    if (basicInfo[field]) {
+      validateField(field, basicInfo[field]);
+    }
+  };
+
   const handleNext = () => {
+    if (currentStep === 2) {
+      if (!validateBasicInfo()) {
+        return;
+      }
+    }
+    
     if (currentStep < TOTAL_STEPS) {
       setCurrentStep(currentStep + 1);
     } else {
@@ -142,6 +197,20 @@ const OnboardingPage = () => {
     { title: "Prompts", icon: User },
     { title: "Complete", icon: Check },
   ];
+
+  const renderFieldError = (field: keyof BasicInfoFormData) => {
+    if (!fieldErrors[field]) return null;
+    return (
+      <motion.p
+        initial={{ opacity: 0, y: -5 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mt-1 flex items-center gap-1 text-xs text-destructive"
+      >
+        <AlertCircle className="h-3 w-3" />
+        {fieldErrors[field]}
+      </motion.p>
+    );
+  };
 
   const renderStep = () => {
     switch (currentStep) {
@@ -236,9 +305,11 @@ const OnboardingPage = () => {
                       id="firstName"
                       placeholder="Enter first name"
                       value={basicInfo.firstName}
-                      onChange={(e) => setBasicInfo({ ...basicInfo, firstName: e.target.value })}
-                      className="rounded-xl"
+                      onChange={(e) => handleInputChange("firstName", e.target.value)}
+                      onBlur={() => handleInputBlur("firstName")}
+                      className={`rounded-xl ${fieldErrors.firstName ? "border-destructive focus-visible:ring-destructive" : ""}`}
                     />
+                    {renderFieldError("firstName")}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="lastName">Last Name</Label>
@@ -246,9 +317,11 @@ const OnboardingPage = () => {
                       id="lastName"
                       placeholder="Enter last name"
                       value={basicInfo.lastName}
-                      onChange={(e) => setBasicInfo({ ...basicInfo, lastName: e.target.value })}
-                      className="rounded-xl"
+                      onChange={(e) => handleInputChange("lastName", e.target.value)}
+                      onBlur={() => handleInputBlur("lastName")}
+                      className={`rounded-xl ${fieldErrors.lastName ? "border-destructive focus-visible:ring-destructive" : ""}`}
                     />
+                    {renderFieldError("lastName")}
                   </div>
                 </div>
 
@@ -259,9 +332,9 @@ const OnboardingPage = () => {
                   </Label>
                   <Select
                     value={basicInfo.gender}
-                    onValueChange={(value) => setBasicInfo({ ...basicInfo, gender: value })}
+                    onValueChange={(value) => handleInputChange("gender", value)}
                   >
-                    <SelectTrigger className="rounded-xl">
+                    <SelectTrigger className={`rounded-xl ${fieldErrors.gender ? "border-destructive" : ""}`}>
                       <SelectValue placeholder="Select gender" />
                     </SelectTrigger>
                     <SelectContent>
@@ -269,6 +342,7 @@ const OnboardingPage = () => {
                       <SelectItem value="female">Female</SelectItem>
                     </SelectContent>
                   </Select>
+                  {renderFieldError("gender")}
                 </div>
 
                 <div className="space-y-2">
@@ -280,9 +354,11 @@ const OnboardingPage = () => {
                     id="birthDate"
                     type="date"
                     value={basicInfo.birthDate}
-                    onChange={(e) => setBasicInfo({ ...basicInfo, birthDate: e.target.value })}
-                    className="rounded-xl"
+                    onChange={(e) => handleInputChange("birthDate", e.target.value)}
+                    onBlur={() => handleInputBlur("birthDate")}
+                    className={`rounded-xl ${fieldErrors.birthDate ? "border-destructive focus-visible:ring-destructive" : ""}`}
                   />
+                  {renderFieldError("birthDate")}
                 </div>
 
                 <div className="space-y-2">
@@ -294,9 +370,11 @@ const OnboardingPage = () => {
                     id="location"
                     placeholder="e.g., Mumbai, Maharashtra"
                     value={basicInfo.location}
-                    onChange={(e) => setBasicInfo({ ...basicInfo, location: e.target.value })}
-                    className="rounded-xl"
+                    onChange={(e) => handleInputChange("location", e.target.value)}
+                    onBlur={() => handleInputBlur("location")}
+                    className={`rounded-xl ${fieldErrors.location ? "border-destructive focus-visible:ring-destructive" : ""}`}
                   />
+                  {renderFieldError("location")}
                 </div>
 
                 <div className="space-y-2">
@@ -308,9 +386,11 @@ const OnboardingPage = () => {
                     id="occupation"
                     placeholder="e.g., Software Engineer"
                     value={basicInfo.occupation}
-                    onChange={(e) => setBasicInfo({ ...basicInfo, occupation: e.target.value })}
-                    className="rounded-xl"
+                    onChange={(e) => handleInputChange("occupation", e.target.value)}
+                    onBlur={() => handleInputBlur("occupation")}
+                    className={`rounded-xl ${fieldErrors.occupation ? "border-destructive focus-visible:ring-destructive" : ""}`}
                   />
+                  {renderFieldError("occupation")}
                 </div>
               </div>
             </div>
@@ -548,7 +628,7 @@ const OnboardingPage = () => {
       case 1:
         return true;
       case 2:
-        return basicInfo.firstName && basicInfo.lastName && basicInfo.gender && basicInfo.birthDate;
+        return basicInfo.firstName && basicInfo.lastName && basicInfo.gender && basicInfo.birthDate && basicInfo.location && basicInfo.occupation;
       case 3:
         return selectedSect !== null;
       case 4:

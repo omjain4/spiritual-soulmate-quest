@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { 
   ArrowLeft, User, Camera, Edit3, Save, X,
   MapPin, Briefcase, GraduationCap, Heart, Sparkles,
-  Settings, Users, ChevronRight, Check, LogOut, Calendar
+  Settings, Users, ChevronRight, Check, LogOut, Calendar, AlertCircle
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import RatingBadge from "@/components/RatingBadge";
@@ -13,19 +13,26 @@ import PromptCard from "@/components/PromptCard";
 import PrivacyControls from "@/components/PrivacyControls";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import PhotoUpload from "@/components/PhotoUpload";
 import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { profileEditSchema, ProfileEditFormData } from "@/lib/validations";
+import { z } from "zod";
+
+type FieldErrors = Partial<Record<keyof ProfileEditFormData, string>>;
 
 const ProfilePage = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<"profile" | "settings">("profile");
   const [isEditing, setIsEditing] = useState(false);
+  const [isEditingPhotos, setIsEditingPhotos] = useState(false);
   const [editingPrompt, setEditingPrompt] = useState<string | null>(null);
   const [tempPromptAnswer, setTempPromptAnswer] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const [profileData, setProfileData] = useState({
     name: user?.name || "User",
@@ -79,7 +86,54 @@ const ProfilePage = () => {
     { id: "notifications", label: "Push Notifications", description: "Get notified of new matches", enabled: true },
   ];
 
+  const validateForm = (): boolean => {
+    try {
+      profileEditSchema.parse(editForm);
+      setFieldErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const errors: FieldErrors = {};
+        error.errors.forEach((err) => {
+          const field = err.path[0] as keyof ProfileEditFormData;
+          errors[field] = err.message;
+        });
+        setFieldErrors(errors);
+      }
+      return false;
+    }
+  };
+
+  const validateField = (field: keyof ProfileEditFormData, value: string) => {
+    try {
+      const fieldSchema = profileEditSchema.shape[field];
+      fieldSchema.parse(value);
+      setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        setFieldErrors((prev) => ({ ...prev, [field]: error.errors[0].message }));
+      }
+    }
+  };
+
+  const handleInputChange = (field: keyof ProfileEditFormData, value: string) => {
+    setEditForm({ ...editForm, [field]: value });
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+  };
+
+  const handleInputBlur = (field: keyof ProfileEditFormData) => {
+    if (editForm[field]) {
+      validateField(field, editForm[field]);
+    }
+  };
+
   const handleSaveProfile = () => {
+    if (!validateForm()) {
+      return;
+    }
+    
     setProfileData({
       ...profileData,
       firstName: editForm.firstName,
@@ -94,6 +148,7 @@ const ProfilePage = () => {
       sect: editForm.sect,
     });
     setIsEditing(false);
+    setFieldErrors({});
   };
 
   const handleCancelEdit = () => {
@@ -109,6 +164,7 @@ const ProfilePage = () => {
       sect: profileData.sect,
     });
     setIsEditing(false);
+    setFieldErrors({});
   };
 
   const handlePromptEdit = (promptId: string) => {
@@ -139,6 +195,24 @@ const ProfilePage = () => {
 
   const getSectTitle = (sectId: string) => {
     return sects.find(s => s.id === sectId)?.title || sectId;
+  };
+
+  const handlePhotosChange = (photos: string[]) => {
+    setProfileData({ ...profileData, photos });
+  };
+
+  const renderFieldError = (field: keyof ProfileEditFormData) => {
+    if (!fieldErrors[field]) return null;
+    return (
+      <motion.p
+        initial={{ opacity: 0, y: -5 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mt-1 flex items-center gap-1 text-xs text-destructive"
+      >
+        <AlertCircle className="h-3 w-3" />
+        {fieldErrors[field]}
+      </motion.p>
+    );
   };
 
   return (
@@ -199,7 +273,10 @@ const ProfilePage = () => {
                   <div className="h-32 w-32 overflow-hidden rounded-3xl">
                     <img src={profileData.photos[0]} alt={profileData.name} className="h-full w-full object-cover" />
                   </div>
-                  <button className="absolute -bottom-2 -right-2 flex h-10 w-10 items-center justify-center rounded-full bg-foreground text-background shadow-lg transition-transform hover:scale-105">
+                  <button 
+                    onClick={() => setIsEditingPhotos(true)}
+                    className="absolute -bottom-2 -right-2 flex h-10 w-10 items-center justify-center rounded-full bg-foreground text-background shadow-lg transition-transform hover:scale-105"
+                  >
                     <Camera className="h-5 w-5" />
                   </button>
                   {profileData.isVerified && (
@@ -242,18 +319,28 @@ const ProfilePage = () => {
               >
                 <div className="mb-4 flex items-center justify-between">
                   <h3 className="font-medium">Photos</h3>
-                  <button className="text-sm font-medium text-primary">Manage</button>
+                  <button 
+                    onClick={() => setIsEditingPhotos(true)}
+                    className="text-sm font-medium text-primary"
+                  >
+                    Manage
+                  </button>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
-                  {profileData.photos.map((photo, i) => (
+                  {profileData.photos.slice(0, 3).map((photo, i) => (
                     <div key={i} className="aspect-[3/4] overflow-hidden rounded-xl bg-muted">
                       <img src={photo} alt="" className="h-full w-full object-cover" />
                     </div>
                   ))}
-                  <button className="flex aspect-[3/4] flex-col items-center justify-center rounded-xl border-2 border-dashed border-border text-muted-foreground transition-colors hover:border-foreground hover:text-foreground">
-                    <Camera className="h-6 w-6" />
-                    <span className="mt-1 text-xs">Add</span>
-                  </button>
+                  {profileData.photos.length < 6 && (
+                    <button 
+                      onClick={() => setIsEditingPhotos(true)}
+                      className="flex aspect-[3/4] flex-col items-center justify-center rounded-xl border-2 border-dashed border-border text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
+                    >
+                      <Camera className="h-6 w-6" />
+                      <span className="mt-1 text-xs">Add</span>
+                    </button>
+                  )}
                 </div>
               </motion.div>
             </div>
@@ -453,16 +540,22 @@ const ProfilePage = () => {
                 <Input
                   id="edit-firstName"
                   value={editForm.firstName}
-                  onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })}
+                  onChange={(e) => handleInputChange("firstName", e.target.value)}
+                  onBlur={() => handleInputBlur("firstName")}
+                  className={fieldErrors.firstName ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
+                {renderFieldError("firstName")}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-lastName">Last Name</Label>
                 <Input
                   id="edit-lastName"
                   value={editForm.lastName}
-                  onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
+                  onChange={(e) => handleInputChange("lastName", e.target.value)}
+                  onBlur={() => handleInputBlur("lastName")}
+                  className={fieldErrors.lastName ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
+                {renderFieldError("lastName")}
               </div>
             </div>
 
@@ -473,9 +566,9 @@ const ProfilePage = () => {
               </Label>
               <Select
                 value={editForm.gender}
-                onValueChange={(value) => setEditForm({ ...editForm, gender: value })}
+                onValueChange={(value) => handleInputChange("gender", value)}
               >
-                <SelectTrigger>
+                <SelectTrigger className={fieldErrors.gender ? "border-destructive" : ""}>
                   <SelectValue placeholder="Select gender" />
                 </SelectTrigger>
                 <SelectContent>
@@ -483,6 +576,7 @@ const ProfilePage = () => {
                   <SelectItem value="female">Female</SelectItem>
                 </SelectContent>
               </Select>
+              {renderFieldError("gender")}
             </div>
 
             <div className="space-y-2">
@@ -494,8 +588,11 @@ const ProfilePage = () => {
                 id="edit-birthDate"
                 type="date"
                 value={editForm.birthDate}
-                onChange={(e) => setEditForm({ ...editForm, birthDate: e.target.value })}
+                onChange={(e) => handleInputChange("birthDate", e.target.value)}
+                onBlur={() => handleInputBlur("birthDate")}
+                className={fieldErrors.birthDate ? "border-destructive focus-visible:ring-destructive" : ""}
               />
+              {renderFieldError("birthDate")}
             </div>
 
             <div className="space-y-2">
@@ -506,8 +603,11 @@ const ProfilePage = () => {
               <Input
                 id="edit-location"
                 value={editForm.location}
-                onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+                onChange={(e) => handleInputChange("location", e.target.value)}
+                onBlur={() => handleInputBlur("location")}
+                className={fieldErrors.location ? "border-destructive focus-visible:ring-destructive" : ""}
               />
+              {renderFieldError("location")}
             </div>
 
             <div className="space-y-2">
@@ -518,8 +618,11 @@ const ProfilePage = () => {
               <Input
                 id="edit-occupation"
                 value={editForm.occupation}
-                onChange={(e) => setEditForm({ ...editForm, occupation: e.target.value })}
+                onChange={(e) => handleInputChange("occupation", e.target.value)}
+                onBlur={() => handleInputBlur("occupation")}
+                className={fieldErrors.occupation ? "border-destructive focus-visible:ring-destructive" : ""}
               />
+              {renderFieldError("occupation")}
             </div>
 
             <div className="space-y-2">
@@ -527,8 +630,11 @@ const ProfilePage = () => {
               <Input
                 id="edit-company"
                 value={editForm.company}
-                onChange={(e) => setEditForm({ ...editForm, company: e.target.value })}
+                onChange={(e) => handleInputChange("company", e.target.value)}
+                onBlur={() => handleInputBlur("company")}
+                className={fieldErrors.company ? "border-destructive focus-visible:ring-destructive" : ""}
               />
+              {renderFieldError("company")}
             </div>
 
             <div className="space-y-2">
@@ -539,8 +645,11 @@ const ProfilePage = () => {
               <Input
                 id="edit-education"
                 value={editForm.education}
-                onChange={(e) => setEditForm({ ...editForm, education: e.target.value })}
+                onChange={(e) => handleInputChange("education", e.target.value)}
+                onBlur={() => handleInputBlur("education")}
+                className={fieldErrors.education ? "border-destructive focus-visible:ring-destructive" : ""}
               />
+              {renderFieldError("education")}
             </div>
 
             <div className="space-y-2">
@@ -550,9 +659,9 @@ const ProfilePage = () => {
               </Label>
               <Select
                 value={editForm.sect}
-                onValueChange={(value) => setEditForm({ ...editForm, sect: value })}
+                onValueChange={(value) => handleInputChange("sect", value)}
               >
-                <SelectTrigger>
+                <SelectTrigger className={fieldErrors.sect ? "border-destructive" : ""}>
                   <SelectValue placeholder="Select sect" />
                 </SelectTrigger>
                 <SelectContent>
@@ -561,6 +670,7 @@ const ProfilePage = () => {
                   ))}
                 </SelectContent>
               </Select>
+              {renderFieldError("sect")}
             </div>
           </div>
 
@@ -578,6 +688,35 @@ const ProfilePage = () => {
             >
               <Save className="h-4 w-4" />
               Save Changes
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Photos Modal */}
+      <Dialog open={isEditingPhotos} onOpenChange={setIsEditingPhotos}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Camera className="h-5 w-5 text-primary" />
+              Manage Photos
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <PhotoUpload 
+              photos={profileData.photos} 
+              onPhotosChange={handlePhotosChange}
+              maxPhotos={6}
+            />
+          </div>
+
+          <div className="flex justify-end pt-2">
+            <button
+              onClick={() => setIsEditingPhotos(false)}
+              className="rounded-full bg-foreground px-6 py-3 font-medium text-background transition-colors hover:opacity-90"
+            >
+              Done
             </button>
           </div>
         </DialogContent>
