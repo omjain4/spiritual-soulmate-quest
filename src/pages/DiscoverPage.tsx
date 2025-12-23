@@ -240,12 +240,13 @@ const DiscoverPage = () => {
 
             {/* Mobile Action Buttons */}
             {currentProfile && (
-              <div className="mt-8 flex items-center justify-center gap-4 md:hidden">
-                <motion.button onClick={handleUndo} disabled={currentIndex === 0} className="flex h-12 w-12 items-center justify-center rounded-full border border-border text-muted-foreground transition-all hover:bg-muted disabled:opacity-30" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}><RotateCcw className="h-5 w-5" /></motion.button>
-                <motion.button onClick={() => handleSwipe("left")} className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-red-200 bg-white text-red-500 shadow-lg transition-all hover:bg-red-50" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}><X className="h-8 w-8" /></motion.button>
-                <motion.button onClick={handleSave} className="flex h-12 w-12 items-center justify-center rounded-full border border-border text-blue-500 transition-all hover:bg-blue-50" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}><Bookmark className="h-5 w-5" /></motion.button>
-                <motion.button onClick={() => handleSwipe("right")} className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-all" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}><Heart className="h-8 w-8" fill="white" /></motion.button>
-                <motion.button className="flex h-12 w-12 items-center justify-center rounded-full border border-border text-purple-500 transition-all hover:bg-purple-50" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}><MessageCircle className="h-5 w-5" /></motion.button>
+              <div className="mt-8 flex items-center justify-center gap-3 md:hidden">
+                <motion.button onClick={handleUndo} disabled={currentIndex === 0} className="flex h-11 w-11 items-center justify-center rounded-full border border-border text-muted-foreground transition-all hover:bg-muted disabled:opacity-30" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}><RotateCcw className="h-5 w-5" /></motion.button>
+                <motion.button onClick={() => handleSwipe("left")} className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-red-200 bg-white text-red-500 shadow-lg transition-all hover:bg-red-50" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}><X className="h-7 w-7" /></motion.button>
+                <motion.button onClick={handleSave} className="flex h-11 w-11 items-center justify-center rounded-full border border-border text-blue-500 transition-all hover:bg-blue-50" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}><Bookmark className="h-5 w-5" /></motion.button>
+                <motion.button onClick={() => { setViewingProfile(currentProfile); setProfilePhotoIndex(0); }} className="flex h-11 w-11 items-center justify-center rounded-full border border-border text-foreground transition-all hover:bg-muted" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}><Eye className="h-5 w-5" /></motion.button>
+                <motion.button onClick={() => handleSwipe("right")} className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-all" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}><Heart className="h-7 w-7" fill="white" /></motion.button>
+                <motion.button className="flex h-11 w-11 items-center justify-center rounded-full border border-border text-purple-500 transition-all hover:bg-purple-50" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}><MessageCircle className="h-5 w-5" /></motion.button>
               </div>
             )}
 
