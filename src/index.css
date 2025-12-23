@@ -1,88 +1,117 @@
+@import "@fontsource/outfit/400.css";
+@import "@fontsource/outfit/500.css";
+@import "@fontsource/outfit/600.css";
+@import "@fontsource/outfit/700.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Jain Jodi - Modern Spiritual Minimalism */
+    --background: 30 40% 98%;
+    --foreground: 20 10% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 20 10% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 20 10% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Deep Saffron - Primary accent */
+    --primary: 18 100% 60%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Sage Green - Trust & harmony */
+    --secondary: 105 16% 54%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Warm muted tones */
+    --muted: 30 20% 94%;
+    --muted-foreground: 20 10% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 30 30% 96%;
+    --accent-foreground: 20 10% 15%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 30 15% 90%;
+    --input: 30 15% 90%;
+    --ring: 18 100% 60%;
 
-    --radius: 0.5rem;
+    --radius: 1rem;
+
+    /* Custom Jain Jodi tokens */
+    --saffron: 18 100% 60%;
+    --saffron-light: 25 100% 95%;
+    --saffron-glow: 18 100% 70%;
+    --sage: 105 16% 54%;
+    --sage-light: 105 20% 94%;
+    --sage-dark: 105 20% 40%;
+    --cream: 40 33% 97%;
+    --warm-white: 30 40% 99%;
+
+    /* Glass effects */
+    --glass-bg: 0 0% 100% / 0.7;
+    --glass-border: 0 0% 100% / 0.3;
+    --glass-shadow: 0 0% 0% / 0.05;
+
+    /* Gradients */
+    --gradient-saffron: linear-gradient(135deg, hsl(18 100% 60%), hsl(30 100% 65%));
+    --gradient-sage: linear-gradient(135deg, hsl(105 16% 54%), hsl(120 20% 60%));
+    --gradient-warm: linear-gradient(180deg, hsl(30 40% 98%), hsl(40 33% 95%));
+    --gradient-glass: linear-gradient(135deg, hsl(0 0% 100% / 0.9), hsl(0 0% 100% / 0.6));
+
+    /* Shadows */
+    --shadow-soft: 0 4px 24px -4px hsl(20 10% 15% / 0.08);
+    --shadow-glow: 0 8px 32px -8px hsl(18 100% 60% / 0.25);
+    --shadow-card: 0 2px 16px -2px hsl(20 10% 15% / 0.06);
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 20 15% 8%;
+    --foreground: 30 20% 95%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 20 15% 12%;
+    --card-foreground: 30 20% 95%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 20 15% 12%;
+    --popover-foreground: 30 20% 95%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 18 100% 60%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 105 16% 45%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 20 15% 18%;
+    --muted-foreground: 30 15% 60%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 20 15% 18%;
+    --accent-foreground: 30 20% 95%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: 20 15% 20%;
+    --input: 20 15% 20%;
+    --ring: 18 100% 60%;
+
+    --glass-bg: 20 15% 15% / 0.8;
+    --glass-border: 0 0% 100% / 0.1;
+    --glass-shadow: 0 0% 0% / 0.3;
+
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -100,6 +129,184 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', system-ui, sans-serif;
+    @apply font-semibold tracking-tight;
+  }
+}
+
+@layer components {
+  /* Glassmorphism card */
+  .glass-card {
+    @apply relative overflow-hidden rounded-2xl;
+    background: hsl(var(--glass-bg));
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid hsl(var(--glass-border));
+    box-shadow: var(--shadow-card);
+  }
+
+  .glass-card-elevated {
+    @apply glass-card;
+    box-shadow: var(--shadow-soft);
+  }
+
+  /* Saffron gradient button */
+  .btn-saffron {
+    @apply relative overflow-hidden rounded-xl px-6 py-3 font-medium text-primary-foreground transition-all duration-300;
+    background: var(--gradient-saffron);
+    box-shadow: var(--shadow-glow);
+  }
+
+  .btn-saffron:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px -8px hsl(18 100% 60% / 0.35);
+  }
+
+  .btn-saffron:active {
+    transform: translateY(0);
+  }
+
+  /* Sage outline button */
+  .btn-sage {
+    @apply rounded-xl border-2 px-6 py-3 font-medium transition-all duration-300;
+    border-color: hsl(var(--sage));
+    color: hsl(var(--sage-dark));
+  }
+
+  .btn-sage:hover {
+    background: hsl(var(--sage-light));
+  }
+
+  /* Rating badge */
+  .rating-badge {
+    @apply inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold;
+    background: var(--gradient-saffron);
+    color: white;
+    box-shadow: 0 2px 8px hsl(18 100% 60% / 0.3);
+  }
+
+  /* Progress bar */
+  .progress-saffron {
+    @apply h-1.5 rounded-full overflow-hidden;
+    background: hsl(var(--saffron-light));
+  }
+
+  .progress-saffron-fill {
+    @apply h-full rounded-full transition-all duration-500 ease-out;
+    background: var(--gradient-saffron);
+  }
+
+  /* Input glass style */
+  .input-glass {
+    @apply w-full rounded-xl border px-4 py-3 text-foreground placeholder:text-muted-foreground transition-all duration-200;
+    background: hsl(var(--glass-bg));
+    border-color: hsl(var(--glass-border));
+  }
+
+  .input-glass:focus {
+    @apply outline-none ring-2;
+    ring-color: hsl(var(--saffron) / 0.3);
+    border-color: hsl(var(--saffron));
+  }
+
+  /* Selection card */
+  .selection-card {
+    @apply relative cursor-pointer rounded-2xl border-2 p-4 transition-all duration-300;
+    border-color: hsl(var(--border));
+    background: hsl(var(--glass-bg));
+  }
+
+  .selection-card:hover {
+    border-color: hsl(var(--saffron) / 0.5);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .selection-card.selected {
+    border-color: hsl(var(--saffron));
+    background: hsl(var(--saffron-light));
+  }
+
+  /* Prompt card (Hinge-style) */
+  .prompt-card {
+    @apply relative rounded-2xl p-5 transition-all duration-300;
+    background: hsl(var(--cream));
+    border: 1px solid hsl(var(--border));
+  }
+
+  .prompt-card:hover {
+    box-shadow: var(--shadow-soft);
+  }
+
+  /* Profile card in feed */
+  .profile-card {
+    @apply relative overflow-hidden rounded-3xl;
+    background: hsl(var(--card));
+    box-shadow: var(--shadow-soft);
+  }
+
+  /* Floating action button */
+  .fab {
+    @apply flex items-center justify-center rounded-full transition-all duration-300;
+    box-shadow: var(--shadow-soft);
+  }
+
+  .fab-primary {
+    @apply fab h-14 w-14;
+    background: var(--gradient-saffron);
+    box-shadow: var(--shadow-glow);
+  }
+
+  .fab-secondary {
+    @apply fab h-12 w-12 border;
+    background: hsl(var(--card));
+    border-color: hsl(var(--border));
+  }
+
+  /* Mobile app container */
+  .app-container {
+    @apply mx-auto min-h-screen w-full max-w-md;
+    background: var(--gradient-warm);
+  }
+
+  @media (min-width: 768px) {
+    .app-container {
+      @apply max-w-lg rounded-3xl my-8 min-h-0 overflow-hidden;
+      box-shadow: 0 25px 50px -12px hsl(20 10% 15% / 0.15);
+    }
+  }
+}
+
+@layer utilities {
+  .text-gradient-saffron {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-saffron);
+  }
+
+  .bg-gradient-warm {
+    background: var(--gradient-warm);
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .animate-pulse-soft {
+    animation: pulse-soft 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-soft {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
   }
 }
