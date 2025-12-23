@@ -9,65 +9,76 @@
 
 @layer base {
   :root {
-    /* Jain Jodi - Modern Spiritual Minimalism */
-    --background: 30 40% 98%;
-    --foreground: 20 10% 15%;
+    /* Dating App - Modern & Romantic */
+    --background: 280 20% 98%;
+    --foreground: 280 15% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 20 10% 15%;
+    --card-foreground: 280 15% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 20 10% 15%;
+    --popover-foreground: 280 15% 10%;
 
-    /* Deep Saffron - Primary accent */
-    --primary: 18 100% 60%;
+    /* Rose Pink - Primary */
+    --primary: 340 75% 55%;
     --primary-foreground: 0 0% 100%;
 
-    /* Sage Green - Trust & harmony */
-    --secondary: 105 16% 54%;
+    /* Purple - Secondary */
+    --secondary: 280 60% 60%;
     --secondary-foreground: 0 0% 100%;
 
     /* Warm muted tones */
-    --muted: 30 20% 94%;
-    --muted-foreground: 20 10% 45%;
+    --muted: 280 10% 94%;
+    --muted-foreground: 280 10% 45%;
 
-    --accent: 30 30% 96%;
-    --accent-foreground: 20 10% 15%;
+    --accent: 340 30% 96%;
+    --accent-foreground: 280 15% 10%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 30 15% 90%;
-    --input: 30 15% 90%;
-    --ring: 18 100% 60%;
+    --border: 280 10% 90%;
+    --input: 280 10% 90%;
+    --ring: 340 75% 55%;
 
     --radius: 1rem;
 
-    /* Custom Jain Jodi tokens */
-    --saffron: 18 100% 60%;
-    --saffron-light: 25 100% 95%;
-    --saffron-glow: 18 100% 70%;
+    /* Dating App Custom tokens */
+    --rose: 340 75% 55%;
+    --rose-light: 340 100% 95%;
+    --rose-glow: 340 80% 65%;
+    --purple: 280 60% 60%;
+    --purple-light: 280 40% 94%;
+    --purple-dark: 280 50% 40%;
+    --blush: 20 40% 97%;
+    --warm-white: 280 20% 99%;
+
+    /* Saffron for Jain branding */
+    --saffron: 30 100% 55%;
+    --saffron-light: 30 100% 95%;
+    --saffron-glow: 30 100% 65%;
     --sage: 105 16% 54%;
     --sage-light: 105 20% 94%;
     --sage-dark: 105 20% 40%;
-    --cream: 40 33% 97%;
-    --warm-white: 30 40% 99%;
 
     /* Glass effects */
-    --glass-bg: 0 0% 100% / 0.7;
-    --glass-border: 0 0% 100% / 0.3;
+    --glass-bg: 0 0% 100% / 0.85;
+    --glass-border: 0 0% 100% / 0.4;
     --glass-shadow: 0 0% 0% / 0.05;
 
     /* Gradients */
-    --gradient-saffron: linear-gradient(135deg, hsl(18 100% 60%), hsl(30 100% 65%));
-    --gradient-sage: linear-gradient(135deg, hsl(105 16% 54%), hsl(120 20% 60%));
-    --gradient-warm: linear-gradient(180deg, hsl(30 40% 98%), hsl(40 33% 95%));
-    --gradient-glass: linear-gradient(135deg, hsl(0 0% 100% / 0.9), hsl(0 0% 100% / 0.6));
+    --gradient-primary: linear-gradient(135deg, hsl(340 75% 55%), hsl(280 60% 60%));
+    --gradient-rose: linear-gradient(135deg, hsl(340 75% 55%), hsl(350 80% 65%));
+    --gradient-purple: linear-gradient(135deg, hsl(280 60% 60%), hsl(300 70% 65%));
+    --gradient-warm: linear-gradient(180deg, hsl(280 20% 98%), hsl(340 30% 96%));
+    --gradient-glass: linear-gradient(135deg, hsl(0 0% 100% / 0.95), hsl(0 0% 100% / 0.75));
+    --gradient-saffron: linear-gradient(135deg, hsl(30 100% 55%), hsl(40 100% 60%));
 
     /* Shadows */
-    --shadow-soft: 0 4px 24px -4px hsl(20 10% 15% / 0.08);
-    --shadow-glow: 0 8px 32px -8px hsl(18 100% 60% / 0.25);
-    --shadow-card: 0 2px 16px -2px hsl(20 10% 15% / 0.06);
+    --shadow-soft: 0 4px 24px -4px hsl(280 15% 15% / 0.1);
+    --shadow-glow: 0 8px 32px -8px hsl(340 75% 55% / 0.3);
+    --shadow-card: 0 2px 16px -2px hsl(280 15% 15% / 0.08);
+    --shadow-elevated: 0 12px 40px -12px hsl(280 15% 15% / 0.15);
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -80,37 +91,37 @@
   }
 
   .dark {
-    --background: 20 15% 8%;
-    --foreground: 30 20% 95%;
+    --background: 280 15% 6%;
+    --foreground: 280 10% 95%;
 
-    --card: 20 15% 12%;
-    --card-foreground: 30 20% 95%;
+    --card: 280 15% 10%;
+    --card-foreground: 280 10% 95%;
 
-    --popover: 20 15% 12%;
-    --popover-foreground: 30 20% 95%;
+    --popover: 280 15% 10%;
+    --popover-foreground: 280 10% 95%;
 
-    --primary: 18 100% 60%;
+    --primary: 340 75% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 105 16% 45%;
+    --secondary: 280 50% 50%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 20 15% 18%;
-    --muted-foreground: 30 15% 60%;
+    --muted: 280 15% 18%;
+    --muted-foreground: 280 10% 60%;
 
-    --accent: 20 15% 18%;
-    --accent-foreground: 30 20% 95%;
+    --accent: 280 15% 18%;
+    --accent-foreground: 280 10% 95%;
 
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 20 15% 20%;
-    --input: 20 15% 20%;
-    --ring: 18 100% 60%;
+    --border: 280 15% 20%;
+    --input: 280 15% 20%;
+    --ring: 340 75% 55%;
 
-    --glass-bg: 20 15% 15% / 0.8;
+    --glass-bg: 280 15% 12% / 0.9;
     --glass-border: 0 0% 100% / 0.1;
-    --glass-shadow: 0 0% 0% / 0.3;
+    --glass-shadow: 0 0% 0% / 0.4;
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
@@ -140,102 +151,113 @@
 }
 
 @layer components {
-  /* Glassmorphism card */
+  /* Glassmorphism card - Dating style */
   .glass-card {
-    @apply relative overflow-hidden rounded-2xl;
+    @apply relative overflow-hidden rounded-3xl;
     background: hsl(var(--glass-bg));
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
     border: 1px solid hsl(var(--glass-border));
     box-shadow: var(--shadow-card);
   }
 
   .glass-card-elevated {
     @apply glass-card;
-    box-shadow: var(--shadow-soft);
+    box-shadow: var(--shadow-elevated);
   }
 
-  /* Saffron gradient button */
-  .btn-saffron {
-    @apply relative overflow-hidden rounded-xl px-6 py-3 font-medium text-primary-foreground transition-all duration-300;
-    background: var(--gradient-saffron);
+  /* Primary gradient button */
+  .btn-primary {
+    @apply relative overflow-hidden rounded-2xl px-6 py-3.5 font-semibold text-primary-foreground transition-all duration-300;
+    background: var(--gradient-primary);
     box-shadow: var(--shadow-glow);
   }
 
-  .btn-saffron:hover {
+  .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 40px -8px hsl(18 100% 60% / 0.35);
+    box-shadow: 0 14px 44px -8px hsl(340 75% 55% / 0.4);
   }
 
-  .btn-saffron:active {
+  .btn-primary:active {
     transform: translateY(0);
   }
 
-  /* Sage outline button */
-  .btn-sage {
-    @apply rounded-xl border-2 px-6 py-3 font-medium transition-all duration-300;
-    border-color: hsl(var(--sage));
-    color: hsl(var(--sage-dark));
+  /* Saffron button (legacy support) */
+  .btn-saffron {
+    @apply btn-primary;
   }
 
-  .btn-sage:hover {
-    background: hsl(var(--sage-light));
+  /* Outline button */
+  .btn-outline {
+    @apply rounded-2xl border-2 px-6 py-3.5 font-semibold transition-all duration-300;
+    border-color: hsl(var(--primary));
+    color: hsl(var(--primary));
+    background: transparent;
+  }
+
+  .btn-outline:hover {
+    background: hsl(var(--rose-light));
+  }
+
+  /* Sage button (legacy support) */
+  .btn-sage {
+    @apply btn-outline;
   }
 
   /* Rating badge */
   .rating-badge {
-    @apply inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold;
-    background: var(--gradient-saffron);
+    @apply inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-bold;
+    background: var(--gradient-primary);
     color: white;
-    box-shadow: 0 2px 8px hsl(18 100% 60% / 0.3);
+    box-shadow: 0 4px 12px hsl(340 75% 55% / 0.35);
   }
 
   /* Progress bar */
-  .progress-saffron {
-    @apply h-1.5 rounded-full overflow-hidden;
-    background: hsl(var(--saffron-light));
+  .progress-primary {
+    @apply h-2 rounded-full overflow-hidden;
+    background: hsl(var(--rose-light));
   }
 
-  .progress-saffron-fill {
+  .progress-primary-fill {
     @apply h-full rounded-full transition-all duration-500 ease-out;
-    background: var(--gradient-saffron);
+    background: var(--gradient-primary);
   }
 
   /* Input glass style */
   .input-glass {
-    @apply w-full rounded-xl border px-4 py-3 text-foreground placeholder:text-muted-foreground transition-all duration-200;
-    background: hsl(var(--glass-bg));
-    border-color: hsl(var(--glass-border));
+    @apply w-full rounded-2xl border-2 px-4 py-3.5 text-foreground placeholder:text-muted-foreground transition-all duration-200;
+    background: hsl(var(--card));
+    border-color: hsl(var(--border));
   }
 
   .input-glass:focus {
-    @apply outline-none ring-2;
-    ring-color: hsl(var(--saffron) / 0.3);
-    border-color: hsl(var(--saffron));
+    @apply outline-none;
+    border-color: hsl(var(--primary));
+    box-shadow: 0 0 0 4px hsl(var(--primary) / 0.15);
   }
 
   /* Selection card */
   .selection-card {
-    @apply relative cursor-pointer rounded-2xl border-2 p-4 transition-all duration-300;
+    @apply relative cursor-pointer rounded-2xl border-2 p-5 transition-all duration-300;
     border-color: hsl(var(--border));
-    background: hsl(var(--glass-bg));
+    background: hsl(var(--card));
   }
 
   .selection-card:hover {
-    border-color: hsl(var(--saffron) / 0.5);
+    border-color: hsl(var(--primary) / 0.5);
     transform: translateY(-2px);
     box-shadow: var(--shadow-soft);
   }
 
   .selection-card.selected {
-    border-color: hsl(var(--saffron));
-    background: hsl(var(--saffron-light));
+    border-color: hsl(var(--primary));
+    background: hsl(var(--rose-light));
   }
 
   /* Prompt card (Hinge-style) */
   .prompt-card {
     @apply relative rounded-2xl p-5 transition-all duration-300;
-    background: hsl(var(--cream));
+    background: hsl(var(--accent));
     border: 1px solid hsl(var(--border));
   }
 
@@ -245,30 +267,71 @@
 
   /* Profile card in feed */
   .profile-card {
-    @apply relative overflow-hidden rounded-3xl;
+    @apply relative overflow-hidden rounded-[2rem];
     background: hsl(var(--card));
-    box-shadow: var(--shadow-soft);
+    box-shadow: var(--shadow-elevated);
   }
 
   /* Floating action button */
   .fab {
     @apply flex items-center justify-center rounded-full transition-all duration-300;
-    box-shadow: var(--shadow-soft);
+    box-shadow: var(--shadow-elevated);
   }
 
   .fab-primary {
-    @apply fab h-14 w-14;
-    background: var(--gradient-saffron);
+    @apply fab h-16 w-16;
+    background: var(--gradient-primary);
     box-shadow: var(--shadow-glow);
   }
 
   .fab-secondary {
-    @apply fab h-12 w-12 border;
+    @apply fab h-14 w-14 border-2;
     background: hsl(var(--card));
     border-color: hsl(var(--border));
   }
 
-  /* Mobile app container */
+  /* Page container */
+  .page-container {
+    @apply min-h-screen w-full;
+    background: var(--gradient-warm);
+  }
+
+  /* Content container */
+  .content-container {
+    @apply mx-auto max-w-6xl px-4 pt-20 pb-24 md:pt-32 md:pb-8;
+  }
+
+  /* Section card */
+  .section-card {
+    @apply rounded-3xl bg-card p-6 shadow-sm border border-border;
+  }
+
+  /* Badge styles */
+  .badge-primary {
+    @apply inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold;
+    background: hsl(var(--rose-light));
+    color: hsl(var(--primary));
+  }
+
+  .badge-secondary {
+    @apply inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold;
+    background: hsl(var(--purple-light));
+    color: hsl(var(--purple-dark));
+  }
+
+  /* Icon button */
+  .icon-btn {
+    @apply flex h-12 w-12 items-center justify-center rounded-full transition-all duration-200;
+    background: hsl(var(--muted));
+    color: hsl(var(--muted-foreground));
+  }
+
+  .icon-btn:hover {
+    background: hsl(var(--muted) / 0.8);
+    color: hsl(var(--foreground));
+  }
+
+  /* App container (mobile-first) */
   .app-container {
     @apply mx-auto min-h-screen w-full max-w-md;
     background: var(--gradient-warm);
@@ -276,20 +339,33 @@
 
   @media (min-width: 768px) {
     .app-container {
-      @apply max-w-lg rounded-3xl my-8 min-h-0 overflow-hidden;
-      box-shadow: 0 25px 50px -12px hsl(20 10% 15% / 0.15);
+      @apply max-w-lg rounded-[2.5rem] my-8 min-h-0 overflow-hidden;
+      box-shadow: var(--shadow-elevated);
     }
   }
 }
 
 @layer utilities {
-  .text-gradient-saffron {
+  .text-gradient-primary {
     @apply bg-clip-text text-transparent;
-    background-image: var(--gradient-saffron);
+    background-image: var(--gradient-primary);
+  }
+
+  /* Legacy support */
+  .text-gradient-saffron {
+    @apply text-gradient-primary;
   }
 
   .bg-gradient-warm {
     background: var(--gradient-warm);
+  }
+
+  .bg-gradient-primary {
+    background: var(--gradient-primary);
+  }
+
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
   }
 
   .animate-float {
@@ -308,5 +384,17 @@
   @keyframes pulse-soft {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.7; }
+  }
+
+  .animate-heart {
+    animation: heart-beat 1.2s ease-in-out infinite;
+  }
+
+  @keyframes heart-beat {
+    0%, 100% { transform: scale(1); }
+    14% { transform: scale(1.15); }
+    28% { transform: scale(1); }
+    42% { transform: scale(1.15); }
+    70% { transform: scale(1); }
   }
 }
