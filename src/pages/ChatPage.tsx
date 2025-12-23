@@ -100,7 +100,7 @@ const ChatPage = () => {
       </div>
 
       {/* Chat View */}
-      <div className={`flex flex-1 flex-col ${!showChatView ? "hidden md:flex" : "flex"}`}>
+      <div className={`flex flex-1 flex-col px-4 md:px-8 lg:px-16 ${!showChatView ? "hidden md:flex" : "flex"}`}>
         {selectedMatch ? (
           <>
             {/* Chat Header */}
