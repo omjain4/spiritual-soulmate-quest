@@ -10,6 +10,9 @@ import DiscoverPage from "./pages/DiscoverPage";
 import PremiumPage from "./pages/PremiumPage";
 import TrustSafetyPage from "./pages/TrustSafetyPage";
 import FamilyModePage from "./pages/FamilyModePage";
+import ProfilePage from "./pages/ProfilePage";
+import WaitlistPage from "./pages/WaitlistPage";
+import ChatPage from "./pages/ChatPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +31,9 @@ const App = () => (
           <Route path="/premium" element={<PremiumPage />} />
           <Route path="/trust-safety" element={<TrustSafetyPage />} />
           <Route path="/family-mode" element={<FamilyModePage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/waitlist" element={<WaitlistPage />} />
+          <Route path="/chat" element={<ChatPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
