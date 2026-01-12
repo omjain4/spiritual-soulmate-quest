@@ -20,6 +20,16 @@ interface Profile {
   dietary_preference: string | null;
   photos: string[];
   interests: string[];
+  // New fields from migration
+  sect: string | null;
+  gotra: string | null;
+  chauvihar_level: string | null;
+  temple_frequency: string | null;
+  jain_rating: number;
+  prompts: { question: string; answer: string }[] | null;
+  is_verified: boolean;
+  onboarding_completed: boolean;
+  main_photo_index: number;
 }
 
 interface AuthContextType {
@@ -54,7 +64,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error("Error fetching profile:", error);
       return null;
     }
-    return data as Profile | null;
+    // Parse prompts from JSON
+    const profile = data ? {
+      ...data,
+      photos: data.photos || [],
+      interests: data.interests || [],
+      prompts: Array.isArray(data.prompts) ? data.prompts as { question: string; answer: string }[] : [],
+      jain_rating: data.jain_rating || 0,
+      is_verified: data.is_verified || false,
+      onboarding_completed: data.onboarding_completed || false,
+      main_photo_index: data.main_photo_index || 0,
+    } : null;
+    return profile as Profile | null;
   };
 
   const refreshProfile = async () => {
