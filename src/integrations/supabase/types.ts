@@ -38,6 +38,51 @@ export type Database = {
         }
         Relationships: []
       }
+      likes: {
+        Row: {
+          created_at: string
+          from_user_id: string
+          id: string
+          is_super_like: boolean | null
+          to_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          from_user_id: string
+          id?: string
+          is_super_like?: boolean | null
+          to_user_id: string
+        }
+        Update: {
+          created_at?: string
+          from_user_id?: string
+          id?: string
+          is_super_like?: boolean | null
+          to_user_id?: string
+        }
+        Relationships: []
+      }
+      matches: {
+        Row: {
+          id: string
+          matched_at: string
+          user1_id: string
+          user2_id: string
+        }
+        Insert: {
+          id?: string
+          matched_at?: string
+          user1_id: string
+          user2_id: string
+        }
+        Update: {
+          id?: string
+          matched_at?: string
+          user1_id?: string
+          user2_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string | null
@@ -79,10 +124,59 @@ export type Database = {
           },
         ]
       }
+      preferences: {
+        Row: {
+          created_at: string
+          exclude_gotra: boolean | null
+          gotra: string | null
+          id: string
+          max_age: number | null
+          min_age: number | null
+          preferred_communities: string[] | null
+          preferred_dietary: string[] | null
+          preferred_gender: string | null
+          preferred_locations: string[] | null
+          preferred_sects: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          exclude_gotra?: boolean | null
+          gotra?: string | null
+          id?: string
+          max_age?: number | null
+          min_age?: number | null
+          preferred_communities?: string[] | null
+          preferred_dietary?: string[] | null
+          preferred_gender?: string | null
+          preferred_locations?: string[] | null
+          preferred_sects?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          exclude_gotra?: boolean | null
+          gotra?: string | null
+          id?: string
+          max_age?: number | null
+          min_age?: number | null
+          preferred_communities?: string[] | null
+          preferred_dietary?: string[] | null
+          preferred_gender?: string | null
+          preferred_locations?: string[] | null
+          preferred_sects?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           bio: string | null
+          chauvihar_level: string | null
           community: string | null
           created_at: string
           date_of_birth: string | null
@@ -90,20 +184,29 @@ export type Database = {
           education: string | null
           email: string | null
           gender: string | null
+          gotra: string | null
           height: string | null
           id: string
           interests: string[] | null
+          is_verified: boolean | null
+          jain_rating: number | null
           location: string | null
+          main_photo_index: number | null
           name: string
           occupation: string | null
+          onboarding_completed: boolean | null
           password_updated_at: string | null
           photos: string[] | null
+          prompts: Json | null
+          sect: string | null
+          temple_frequency: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           avatar_url?: string | null
           bio?: string | null
+          chauvihar_level?: string | null
           community?: string | null
           created_at?: string
           date_of_birth?: string | null
@@ -111,20 +214,29 @@ export type Database = {
           education?: string | null
           email?: string | null
           gender?: string | null
+          gotra?: string | null
           height?: string | null
           id?: string
           interests?: string[] | null
+          is_verified?: boolean | null
+          jain_rating?: number | null
           location?: string | null
+          main_photo_index?: number | null
           name: string
           occupation?: string | null
+          onboarding_completed?: boolean | null
           password_updated_at?: string | null
           photos?: string[] | null
+          prompts?: Json | null
+          sect?: string | null
+          temple_frequency?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           avatar_url?: string | null
           bio?: string | null
+          chauvihar_level?: string | null
           community?: string | null
           created_at?: string
           date_of_birth?: string | null
@@ -132,15 +244,65 @@ export type Database = {
           education?: string | null
           email?: string | null
           gender?: string | null
+          gotra?: string | null
           height?: string | null
           id?: string
           interests?: string[] | null
+          is_verified?: boolean | null
+          jain_rating?: number | null
           location?: string | null
+          main_photo_index?: number | null
           name?: string
           occupation?: string | null
+          onboarding_completed?: boolean | null
           password_updated_at?: string | null
           photos?: string[] | null
+          prompts?: Json | null
+          sect?: string | null
+          temple_frequency?: string | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      saved_profiles: {
+        Row: {
+          created_at: string
+          id: string
+          saved_user_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          saved_user_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          saved_user_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      skipped_profiles: {
+        Row: {
+          created_at: string
+          id: string
+          skipped_user_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          skipped_user_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          skipped_user_id?: string
           user_id?: string
         }
         Relationships: []
@@ -182,7 +344,32 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      calculate_match_score: {
+        Args: { target_id: string; viewer_id: string }
+        Returns: number
+      }
+      get_recommended_profiles: {
+        Args: { current_user_id: string; limit_count?: number }
+        Returns: {
+          bio: string
+          date_of_birth: string
+          dietary_preference: string
+          education: string
+          gender: string
+          interests: string[]
+          is_verified: boolean
+          jain_rating: number
+          location: string
+          match_score: number
+          name: string
+          occupation: string
+          photos: string[]
+          profile_id: string
+          prompts: Json
+          sect: string
+          user_id: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
