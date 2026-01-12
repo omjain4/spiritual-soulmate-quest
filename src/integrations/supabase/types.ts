@@ -375,6 +375,56 @@ export type Database = {
           },
         ]
       }
+      video_calls: {
+        Row: {
+          answer: Json | null
+          callee_id: string
+          caller_id: string
+          conversation_id: string
+          created_at: string
+          ended_at: string | null
+          ice_candidates: Json[] | null
+          id: string
+          offer: Json | null
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          answer?: Json | null
+          callee_id: string
+          caller_id: string
+          conversation_id: string
+          created_at?: string
+          ended_at?: string | null
+          ice_candidates?: Json[] | null
+          id?: string
+          offer?: Json | null
+          started_at?: string | null
+          status: string
+        }
+        Update: {
+          answer?: Json | null
+          callee_id?: string
+          caller_id?: string
+          conversation_id?: string
+          created_at?: string
+          ended_at?: string | null
+          ice_candidates?: Json[] | null
+          id?: string
+          offer?: Json | null
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_calls_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
