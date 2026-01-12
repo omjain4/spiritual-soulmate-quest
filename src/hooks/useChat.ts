@@ -171,11 +171,17 @@ export const useChat = () => {
       return null;
     }
 
-    const { data } = supabase.storage
+    // Use signed URL for private bucket (1 hour expiry)
+    const { data, error } = await supabase.storage
       .from("chat-media")
-      .getPublicUrl(fileName);
+      .createSignedUrl(fileName, 3600);
 
-    return data.publicUrl;
+    if (error) {
+      console.error("Error creating signed URL:", error);
+      return null;
+    }
+
+    return data.signedUrl;
   }, [user]);
 
   // Set typing indicator
