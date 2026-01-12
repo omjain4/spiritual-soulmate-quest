@@ -436,7 +436,10 @@ const ChatPage = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => startCall(true)}
+                    onClick={() => {
+                      console.log("Starting audio call...", { activeConversationId, otherUserId, callState });
+                      startCall(true);
+                    }}
                     disabled={!isAuthenticated || !activeConversationId || callState !== "idle"}
                     className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Audio call"
@@ -444,7 +447,10 @@ const ChatPage = () => {
                     <Phone className="h-5 w-5" />
                   </button>
                   <button
-                    onClick={() => startCall(false)}
+                    onClick={() => {
+                      console.log("Starting video call...", { activeConversationId, otherUserId, callState });
+                      startCall(false);
+                    }}
                     disabled={!isAuthenticated || !activeConversationId || callState !== "idle"}
                     className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Video call"

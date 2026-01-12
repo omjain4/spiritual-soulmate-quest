@@ -295,60 +295,98 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
   // Start call (caller)
   const startCall = useCallback(
     async (audioOnly: boolean = false) => {
-      if (!user || !conversationId || !otherUserId) return;
+      if (!user || !conversationId || !otherUserId) {
+        console.error("Missing required data for call:", { user: !!user, conversationId, otherUserId });
+        return;
+      }
 
       const stream = await startLocalStream(audioOnly);
       if (!stream) return;
 
       setCallState("calling");
 
-      const { data: call, error } = await supabase
-        .from("video_calls")
-        .insert({
-          caller_id: user.id,
-          callee_id: otherUserId,
-          conversation_id: conversationId,
-          status: "ringing",
-          call_type: audioOnly ? "audio" : "video",
-        })
-        .select()
-        .single();
-
-      if (error || !call) {
-        console.error("Error creating call:", error);
-        cleanup();
-        setCallState("idle");
-        return;
-      }
-
-      const typedCall = coerceCall(call);
-      callIdRef.current = typedCall.id;
-      setCurrentCall(typedCall);
-
-      const pc = createPeerConnectionBound(stream);
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-
-      await supabase.from("video_calls").update({ offer: offer as unknown as any }).eq("id", typedCall.id);
-
-      ringTimeoutRef.current = setTimeout(async () => {
-        await supabase
+      try {
+        console.log("Creating call...", { caller_id: user.id, callee_id: otherUserId, conversation_id: conversationId });
+        
+        const { data: call, error } = await supabase
           .from("video_calls")
-          .update({ status: "missed" })
+          .insert({
+            caller_id: user.id,
+            callee_id: otherUserId,
+            conversation_id: conversationId,
+            status: "ringing",
+            call_type: audioOnly ? "audio" : "video",
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error("Error creating call:", error);
+          cleanup();
+          setCallState("idle");
+          toast({
+            title: "Call failed",
+            description: "Unable to start the call. Please try again.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (!call) {
+          console.error("No call data returned");
+          cleanup();
+          setCallState("idle");
+          return;
+        }
+
+        console.log("Call created successfully:", call);
+        const typedCall = coerceCall(call);
+        callIdRef.current = typedCall.id;
+        setCurrentCall(typedCall);
+
+        const pc = createPeerConnectionBound(stream);
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+
+        // Update the call with the offer
+        const { error: updateError } = await supabase
+          .from("video_calls")
+          .update({ offer: offer as unknown as any })
           .eq("id", typedCall.id);
-        await addToCallHistory(typedCall, "missed");
+
+        if (updateError) {
+          console.error("Error updating call with offer:", updateError);
+        }
+
+        ringTimeoutRef.current = setTimeout(async () => {
+          console.log("Call timeout - no answer");
+          await supabase
+            .from("video_calls")
+            .update({ status: "missed" })
+            .eq("id", typedCall.id);
+          await addToCallHistory(typedCall, "missed");
+          cleanup();
+          setCallState("idle");
+          toast({
+            title: "No answer",
+            description: "The call was not answered.",
+          });
+        }, RING_TIMEOUT_MS);
+
+        toast({
+          title: "Calling…",
+          description: "Waiting for the other person to answer.",
+        });
+      } catch (error) {
+        console.error("Unexpected error starting call:", error);
         cleanup();
         setCallState("idle");
         toast({
-          title: "No answer",
-          description: "The call was not answered.",
+          title: "Call failed",
+          description: "An unexpected error occurred. Please try again.",
+          variant: "destructive",
         });
-      }, RING_TIMEOUT_MS);
-
-      toast({
-        title: "Calling…",
-        description: "Waiting for the other person to answer.",
-      });
+      }
     },
     [user, conversationId, otherUserId, startLocalStream, cleanup, createPeerConnectionBound, toast, addToCallHistory]
   );
@@ -436,38 +474,62 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
           table: "video_calls",
           filter: `callee_id=eq.${user.id}`,
         },
-        (payload) => {
+        async (payload) => {
+          console.log("Incoming call received:", payload.new);
           const call = coerceCall(payload.new);
-          callIdRef.current = call.id;
-          setCurrentCall(call);
-          setCallState("ringing");
+          
+          // Only process if this is a new incoming call
+          if (call.status === "ringing" && call.callee_id === user.id) {
+            callIdRef.current = call.id;
+            setCurrentCall(call);
+            setCallState("ringing");
 
-          startRingtone();
+            startRingtone();
 
-          ringTimeoutRef.current = setTimeout(async () => {
-            stopRingtone();
-            await supabase
-              .from("video_calls")
-              .update({ status: "missed" })
-              .eq("id", call.id);
-            await addToCallHistory(call, "missed");
-            await createMissedCallNotification(call, user.id);
-            cleanup();
-            setCallState("idle");
-          }, RING_TIMEOUT_MS);
+            // Get caller info for better notification
+            const { data: callerProfile } = await supabase
+              .from("profiles")
+              .select("name, avatar_url")
+              .eq("user_id", call.caller_id)
+              .single();
 
-          toast({
-            title: "Incoming call",
-            description: "Tap to answer or reject.",
-          });
+            ringTimeoutRef.current = setTimeout(async () => {
+              stopRingtone();
+              await supabase
+                .from("video_calls")
+                .update({ status: "missed" })
+                .eq("id", call.id);
+              await addToCallHistory(call, "missed");
+              await createMissedCallNotification(call, user.id);
+              cleanup();
+              setCallState("idle");
+            }, RING_TIMEOUT_MS);
 
-          if (document.hidden && "Notification" in window && Notification.permission === "granted") {
-            new Notification("Incoming Call", {
-              body: `You have an incoming ${call.call_type || "video"} call`,
-              icon: "/favicon.ico",
-              tag: `incoming-call-${call.id}`,
-              requireInteraction: true,
+            toast({
+              title: "Incoming call",
+              description: `${callerProfile?.name || "Someone"} is calling you`,
+              duration: 10000,
             });
+
+            // Show browser notification
+            if ("Notification" in window) {
+              if (Notification.permission === "granted") {
+                new Notification("Incoming Call", {
+                  body: `${callerProfile?.name || "Someone"} is calling you`,
+                  icon: callerProfile?.avatar_url || "/favicon.ico",
+                  tag: `incoming-call-${call.id}`,
+                  requireInteraction: true,
+                });
+              } else if (Notification.permission === "default") {
+                // Request permission for future calls
+                Notification.requestPermission();
+              }
+            }
+
+            // Vibrate if supported
+            if ("vibrate" in navigator) {
+              navigator.vibrate([500, 200, 500, 200, 500]);
+            }
           }
         }
       )

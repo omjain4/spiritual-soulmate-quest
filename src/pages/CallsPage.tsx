@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatDistanceToNow, format } from "date-fns";
 import { cn } from "@/lib/utils";
 import BottomNav from "@/components/BottomNav";
+import CallDebugger from "@/components/CallDebugger";
 
 const CallsPage = () => {
   const navigate = useNavigate();
@@ -35,7 +36,10 @@ const CallsPage = () => {
 
       {/* Content */}
       <main className="flex-1 pb-24">
-        <div className="mx-auto max-w-2xl px-4 py-4">
+        <div className="mx-auto max-w-2xl px-4 py-4 space-y-6">
+          {/* Debug Component - Remove in production */}
+          <CallDebugger />
+          
           <CallHistoryList />
         </div>
       </main>
