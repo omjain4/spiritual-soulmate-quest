@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useCallRingtone } from "@/hooks/useCallRingtone";
 
 interface VideoCall {
   id: string;
@@ -9,10 +10,12 @@ interface VideoCall {
   callee_id: string;
   conversation_id: string;
   status: "pending" | "ringing" | "accepted" | "rejected" | "ended" | "missed";
+  call_type?: string;
   offer?: RTCSessionDescriptionInit;
   answer?: RTCSessionDescriptionInit;
   ice_candidates?: RTCIceCandidateInit[];
   created_at: string;
+  started_at?: string;
 }
 
 const ICE_SERVERS: RTCConfiguration = {
@@ -24,6 +27,7 @@ type CallState = "idle" | "calling" | "ringing" | "connected" | "ended";
 const coerceCall = (raw: any): VideoCall => ({
   ...raw,
   status: raw.status as VideoCall["status"],
+  call_type: raw.call_type as string | undefined,
   offer: raw.offer as RTCSessionDescriptionInit | undefined,
   answer: raw.answer as RTCSessionDescriptionInit | undefined,
   ice_candidates: (raw.ice_candidates as RTCIceCandidateInit[] | null) ?? undefined,
@@ -32,13 +36,15 @@ const coerceCall = (raw: any): VideoCall => ({
 const isOfferAudioOnly = (offer?: RTCSessionDescriptionInit) => {
   const sdp = offer?.sdp;
   if (!sdp) return false;
-  // If the offer SDP has no video m-line, treat it as audio-only.
   return !sdp.includes("m=video");
 };
+
+const RING_TIMEOUT_MS = 30000; // 30 seconds before marking as missed
 
 export const useVideoCall = (conversationId: string | null, otherUserId: string | null) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { startRingtone, stopRingtone } = useCallRingtone();
 
   const [callState, setCallState] = useState<CallState>("idle");
   const [currentCall, setCurrentCall] = useState<VideoCall | null>(null);
@@ -48,11 +54,79 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [isAudioOnly, setIsAudioOnly] = useState(false);
 
+
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const callIdRef = useRef<string | null>(null);
   const handledIceCountRef = useRef<number>(0);
+  const ringTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const callStartTimeRef = useRef<Date | null>(null);
+
+
+  // Add to call history
+  const addToCallHistory = useCallback(async (
+    call: VideoCall,
+    status: "answered" | "missed" | "rejected",
+    durationSeconds: number = 0
+  ) => {
+    try {
+      await supabase.from("call_history").insert({
+        call_id: call.id,
+        caller_id: call.caller_id,
+        callee_id: call.callee_id,
+        conversation_id: call.conversation_id,
+        call_type: call.call_type || (isOfferAudioOnly(call.offer) ? "audio" : "video"),
+        status,
+        started_at: call.started_at || null,
+        ended_at: new Date().toISOString(),
+        duration_seconds: durationSeconds,
+      });
+    } catch (error) {
+      console.error("Error adding to call history:", error);
+    }
+  }, []);
+
+  // Create missed call notification
+  const createMissedCallNotification = useCallback(async (call: VideoCall) => {
+    if (!user || call.callee_id !== user.id) return;
+
+    try {
+      // Get caller profile for notification
+      const { data: callerProfile } = await supabase
+        .from("profiles")
+        .select("name")
+        .eq("user_id", call.caller_id)
+        .single();
+
+      await supabase.from("notifications").insert({
+        user_id: call.callee_id,
+        from_user_id: call.caller_id,
+        conversation_id: call.conversation_id,
+        type: "missed_call",
+        title: "Missed Call",
+        description: `You missed a ${call.call_type || "video"} call from ${callerProfile?.name || "someone"}`,
+      });
+
+      // Also show browser notification if tab is in background
+      if (document.hidden && "Notification" in window && Notification.permission === "granted") {
+        new Notification("Missed Call", {
+          body: `You missed a ${call.call_type || "video"} call from ${callerProfile?.name || "someone"}`,
+          icon: "/favicon.ico",
+          tag: `missed-call-${call.id}`,
+        });
+      }
+    } catch (error) {
+      console.error("Error creating missed call notification:", error);
+    }
+  }, [user]);
 
   const cleanup = useCallback(() => {
+    stopRingtone();
+
+    if (ringTimeoutRef.current) {
+      clearTimeout(ringTimeoutRef.current);
+      ringTimeoutRef.current = null;
+    }
+
     peerConnectionRef.current?.close();
     peerConnectionRef.current = null;
 
@@ -68,8 +142,9 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
 
     handledIceCountRef.current = 0;
     callIdRef.current = null;
+    callStartTimeRef.current = null;
     setCurrentCall(null);
-  }, [localStream, remoteStream]);
+  }, [localStream, remoteStream, stopRingtone]);
 
   const startLocalStream = useCallback(
     async (audioOnly: boolean) => {
@@ -95,59 +170,10 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
     [toast]
   );
 
-  const createPeerConnection = useCallback(
-    (stream: MediaStream) => {
-      const pc = new RTCPeerConnection(ICE_SERVERS);
-
-      stream.getTracks().forEach((track) => pc.addTrack(track, stream));
-
-      pc.ontrack = (event) => {
-        const [s] = event.streams;
-        if (s) setRemoteStream(s);
-      };
-
-      pc.onicecandidate = async (event) => {
-        const callId = callIdRef.current;
-        if (!event.candidate || !callId) return;
-
-        // Append candidate to the stored array
-        const { data: callData, error: readError } = await supabase
-          .from("video_calls")
-          .select("ice_candidates")
-          .eq("id", callId)
-          .maybeSingle();
-
-        if (readError) return;
-
-        const existing = (callData?.ice_candidates as unknown as RTCIceCandidateInit[] | null) ?? [];
-        const next = [...existing, event.candidate.toJSON()];
-
-        await supabase
-          .from("video_calls")
-          .update({ ice_candidates: next as unknown as any[] })
-          .eq("id", callId);
-      };
-
-      pc.oniceconnectionstatechange = () => {
-        if (pc.iceConnectionState === "connected") {
-          setCallState("connected");
-        }
-        if (pc.iceConnectionState === "disconnected" || pc.iceConnectionState === "failed") {
-          void endCall();
-        }
-      };
-
-      peerConnectionRef.current = pc;
-      return pc;
-    },
-    // endCall is declared later but stable via useCallback; safe to reference via function hoisting? Not in TS.
-    // We'll re-bind endCall below by using a ref-like call.
-    []
-  );
-
   // End a call
   const endCall = useCallback(async () => {
     const callId = callIdRef.current;
+    const call = currentCall;
 
     if (callId) {
       await supabase
@@ -156,12 +182,17 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
         .eq("id", callId);
     }
 
+    // Calculate duration and add to history
+    if (call && callStartTimeRef.current) {
+      const durationSeconds = Math.floor((Date.now() - callStartTimeRef.current.getTime()) / 1000);
+      await addToCallHistory(call, "answered", durationSeconds);
+    }
+
     cleanup();
     setCallState("ended");
     setTimeout(() => setCallState("idle"), 700);
-  }, [cleanup]);
+  }, [cleanup, currentCall, addToCallHistory]);
 
-  // Re-bind createPeerConnection's internal endCall usage (because it was created before endCall existed)
   const endCallRef = useRef(endCall);
   useEffect(() => {
     endCallRef.current = endCall;
@@ -229,6 +260,7 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
           callee_id: otherUserId,
           conversation_id: conversationId,
           status: "ringing",
+          call_type: audioOnly ? "audio" : "video",
         })
         .select()
         .single();
@@ -250,12 +282,29 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
 
       await supabase.from("video_calls").update({ offer: offer as unknown as any }).eq("id", typedCall.id);
 
+      // Set timeout for missed call
+      ringTimeoutRef.current = setTimeout(async () => {
+        if (callState === "calling") {
+          await supabase
+            .from("video_calls")
+            .update({ status: "missed" })
+            .eq("id", typedCall.id);
+          await addToCallHistory(typedCall, "missed");
+          cleanup();
+          setCallState("idle");
+          toast({
+            title: "No answer",
+            description: "The call was not answered.",
+          });
+        }
+      }, RING_TIMEOUT_MS);
+
       toast({
         title: "Calling…",
         description: "Waiting for the other person to answer.",
       });
     },
-    [user, conversationId, otherUserId, startLocalStream, cleanup, createPeerConnectionBound, toast]
+    [user, conversationId, otherUserId, startLocalStream, cleanup, createPeerConnectionBound, toast, callState, addToCallHistory]
   );
 
   // Answer call (callee)
@@ -269,11 +318,14 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
       return;
     }
 
+    stopRingtone();
+
     const audioOnly = isOfferAudioOnly(currentCall.offer);
     const stream = await startLocalStream(audioOnly);
     if (!stream) return;
 
     callIdRef.current = currentCall.id;
+    callStartTimeRef.current = new Date();
 
     const pc = createPeerConnectionBound(stream);
     await pc.setRemoteDescription(new RTCSessionDescription(currentCall.offer));
@@ -291,15 +343,18 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
       .eq("id", currentCall.id);
 
     setCallState("connected");
-  }, [user, currentCall, startLocalStream, createPeerConnectionBound, toast]);
+  }, [user, currentCall, startLocalStream, createPeerConnectionBound, toast, stopRingtone]);
 
   const rejectCall = useCallback(async () => {
     if (!currentCall) return;
 
+    stopRingtone();
+
     await supabase.from("video_calls").update({ status: "rejected" }).eq("id", currentCall.id);
+    await addToCallHistory(currentCall, "rejected");
     cleanup();
     setCallState("idle");
-  }, [currentCall, cleanup]);
+  }, [currentCall, cleanup, stopRingtone, addToCallHistory]);
 
   // Toggle mute
   const toggleMute = useCallback(() => {
@@ -332,10 +387,38 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
           callIdRef.current = call.id;
           setCurrentCall(call);
           setCallState("ringing");
+
+          // Start ringtone and vibration
+          startRingtone();
+
+          // Set timeout for missed call (callee side)
+          ringTimeoutRef.current = setTimeout(async () => {
+            stopRingtone();
+            await supabase
+              .from("video_calls")
+              .update({ status: "missed" })
+              .eq("id", call.id);
+            await addToCallHistory(call, "missed");
+            await createMissedCallNotification(call);
+            cleanup();
+            setCallState("idle");
+          }, RING_TIMEOUT_MS);
+
+          // Show toast
           toast({
             title: "Incoming call",
             description: "Tap to answer or reject.",
           });
+
+          // Show browser notification if tab is in background
+          if (document.hidden && "Notification" in window && Notification.permission === "granted") {
+            new Notification("Incoming Call", {
+              body: `You have an incoming ${call.call_type || "video"} call`,
+              icon: "/favicon.ico",
+              tag: `incoming-call-${call.id}`,
+              requireInteraction: true,
+            });
+          }
         }
       )
       .subscribe();
@@ -343,7 +426,7 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, toast]);
+  }, [user, toast, startRingtone, stopRingtone, cleanup, addToCallHistory, createMissedCallNotification]);
 
   // 2) Subscribe to the *active call* by ID (so updates work even if conversationId is not active)
   useEffect(() => {
@@ -370,6 +453,11 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
 
           // Caller receives callee answer
           if (call.status === "accepted" && call.answer && call.caller_id === user.id) {
+            if (ringTimeoutRef.current) {
+              clearTimeout(ringTimeoutRef.current);
+              ringTimeoutRef.current = null;
+            }
+            callStartTimeRef.current = new Date();
             const pc = peerConnectionRef.current;
             if (pc && !pc.currentRemoteDescription) {
               await pc.setRemoteDescription(new RTCSessionDescription(call.answer));
@@ -378,7 +466,12 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
           }
 
           // End states
-          if (call.status === "rejected" || call.status === "ended") {
+          if (call.status === "rejected" || call.status === "ended" || call.status === "missed") {
+            stopRingtone();
+            if (ringTimeoutRef.current) {
+              clearTimeout(ringTimeoutRef.current);
+              ringTimeoutRef.current = null;
+            }
             await endCall();
             return;
           }
@@ -405,7 +498,7 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
       supabase.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, currentCall?.id]);
+  }, [user, currentCall?.id, stopRingtone]);
 
   return {
     callState,
