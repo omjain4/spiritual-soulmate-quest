@@ -9,6 +9,7 @@ interface VideoCallModalProps {
   remoteStream: MediaStream | null;
   isMuted: boolean;
   isVideoOff: boolean;
+  isAudioOnly?: boolean;
   otherUserName?: string;
   otherUserAvatar?: string;
   onAnswer: () => void;
@@ -25,6 +26,7 @@ const VideoCallModal = ({
   remoteStream,
   isMuted,
   isVideoOff,
+  isAudioOnly = false,
   otherUserName,
   otherUserAvatar,
   onAnswer,
@@ -143,39 +145,60 @@ const VideoCallModal = ({
         {/* Connected state */}
         {callState === "connected" && (
           <div className="relative h-full w-full">
-            {/* Remote video */}
-            <video
-              ref={remoteVideoRef}
-              autoPlay
-              playsInline
-              className="h-full w-full object-cover"
-            />
-
-            {/* Local video (picture-in-picture) */}
-            <motion.div
-              drag
-              dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
-              className="absolute bottom-24 right-4 h-40 w-28 overflow-hidden rounded-2xl shadow-lg md:h-48 md:w-36"
-            >
+            {/* Remote video or audio-only avatar */}
+            {isAudioOnly ? (
+              <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-gray-900 to-black">
+                <motion.div
+                  animate={{ scale: [1, 1.05, 1] }}
+                  transition={{ repeat: Infinity, duration: 2 }}
+                  className="h-32 w-32 overflow-hidden rounded-full ring-4 ring-primary/30"
+                >
+                  <img
+                    src={otherUserAvatar || "/placeholder.svg"}
+                    alt={otherUserName}
+                    className="h-full w-full object-cover"
+                  />
+                </motion.div>
+                <h2 className="mt-6 text-2xl font-medium text-white">{otherUserName}</h2>
+                <p className="mt-2 text-white/60">Audio call in progress</p>
+              </div>
+            ) : (
               <video
-                ref={localVideoRef}
+                ref={remoteVideoRef}
                 autoPlay
                 playsInline
-                muted
                 className="h-full w-full object-cover"
               />
-              {isVideoOff && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
-                  <VideoOff className="h-8 w-8 text-white/50" />
-                </div>
-              )}
-            </motion.div>
+            )}
+
+            {/* Local video (picture-in-picture) - only show for video calls */}
+            {!isAudioOnly && (
+              <motion.div
+                drag
+                dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
+                className="absolute bottom-24 right-4 h-40 w-28 overflow-hidden rounded-2xl shadow-lg md:h-48 md:w-36"
+              >
+                <video
+                  ref={localVideoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="h-full w-full object-cover"
+                />
+                {isVideoOff && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
+                    <VideoOff className="h-8 w-8 text-white/50" />
+                  </div>
+                )}
+              </motion.div>
+            )}
 
             {/* Call info */}
             <div className="absolute left-4 top-4 rounded-lg bg-black/40 px-4 py-2 backdrop-blur-sm">
               <div className="flex items-center gap-2">
                 <div className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
                 <span className="text-sm text-white">{otherUserName}</span>
+                {isAudioOnly && <span className="text-xs text-white/60">(Audio)</span>}
               </div>
             </div>
 
@@ -191,16 +214,18 @@ const VideoCallModal = ({
               >
                 {isMuted ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
               </motion.button>
-              <motion.button
-                onClick={onToggleVideo}
-                className={`flex h-14 w-14 items-center justify-center rounded-full ${
-                  isVideoOff ? "bg-red-500" : "bg-white/20 backdrop-blur-sm"
-                } text-white`}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                {isVideoOff ? <VideoOff className="h-6 w-6" /> : <Video className="h-6 w-6" />}
-              </motion.button>
+              {!isAudioOnly && (
+                <motion.button
+                  onClick={onToggleVideo}
+                  className={`flex h-14 w-14 items-center justify-center rounded-full ${
+                    isVideoOff ? "bg-red-500" : "bg-white/20 backdrop-blur-sm"
+                  } text-white`}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {isVideoOff ? <VideoOff className="h-6 w-6" /> : <Video className="h-6 w-6" />}
+                </motion.button>
+              )}
               <motion.button
                 onClick={onEnd}
                 className="flex h-14 w-14 items-center justify-center rounded-full bg-red-500 text-white"

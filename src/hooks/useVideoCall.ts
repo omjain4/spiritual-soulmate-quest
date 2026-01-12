@@ -32,24 +32,29 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
+  const [isAudioOnly, setIsAudioOnly] = useState(false);
 
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
 
   // Get user media
-  const startLocalStream = useCallback(async () => {
+  const startLocalStream = useCallback(async (audioOnly: boolean = false) => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
+        video: !audioOnly,
         audio: true,
       });
       setLocalStream(stream);
+      setIsAudioOnly(audioOnly);
+      if (audioOnly) {
+        setIsVideoOff(true);
+      }
       return stream;
     } catch (error) {
       console.error("Error accessing media devices:", error);
       toast({
-        title: "Camera/Microphone Error",
-        description: "Unable to access camera or microphone. Please check permissions.",
+        title: audioOnly ? "Microphone Error" : "Camera/Microphone Error",
+        description: `Unable to access ${audioOnly ? "microphone" : "camera or microphone"}. Please check permissions.`,
         variant: "destructive",
       });
       return null;
@@ -113,11 +118,11 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
     [currentCall?.id]
   );
 
-  // Start a call
-  const startCall = useCallback(async () => {
+  // Start a call (video or audio only)
+  const startCall = useCallback(async (audioOnly: boolean = false) => {
     if (!user || !conversationId || !otherUserId) return;
 
-    const stream = await startLocalStream();
+    const stream = await startLocalStream(audioOnly);
     if (!stream) return;
 
     setCallState("calling");
@@ -341,6 +346,7 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
     remoteStream,
     isMuted,
     isVideoOff,
+    isAudioOnly,
     startCall,
     answerCall,
     rejectCall,

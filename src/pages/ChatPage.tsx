@@ -74,6 +74,7 @@ const ChatPage = () => {
     remoteStream,
     isMuted,
     isVideoOff,
+    isAudioOnly,
     startCall,
     answerCall,
     rejectCall,
@@ -218,6 +219,7 @@ const ChatPage = () => {
         remoteStream={remoteStream}
         isMuted={isMuted}
         isVideoOff={isVideoOff}
+        isAudioOnly={isAudioOnly}
         onAnswer={answerCall}
         onReject={rejectCall}
         onEnd={endCall}
@@ -394,16 +396,18 @@ const ChatPage = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={startCall}
-                    disabled={!isAuthenticated || !activeConversationId}
+                    onClick={() => startCall(true)}
+                    disabled={!isAuthenticated || !activeConversationId || callState !== "idle"}
                     className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Audio call"
                   >
                     <Phone className="h-5 w-5" />
                   </button>
                   <button
-                    onClick={startCall}
-                    disabled={!isAuthenticated || !activeConversationId}
+                    onClick={() => startCall(false)}
+                    disabled={!isAuthenticated || !activeConversationId || callState !== "idle"}
                     className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Video call"
                   >
                     <Video className="h-5 w-5" />
                   </button>
