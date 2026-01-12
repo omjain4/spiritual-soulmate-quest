@@ -1,13 +1,17 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Send, Phone, Video, MoreVertical, Smile } from "lucide-react";
+import { ArrowLeft, Send, Phone, Video, MoreVertical, Smile, Loader2 } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import ChatMessage from "@/components/ChatMessage";
 import TypingIndicator from "@/components/TypingIndicator";
 import MediaUploadButton from "@/components/MediaUploadButton";
+import VideoCallModal from "@/components/VideoCallModal";
 import { useChat } from "@/hooks/useChat";
+import { useVideoCall } from "@/hooks/useVideoCall";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client";
 
 // Mock data for demo when not authenticated
 const mockMatches = [
@@ -26,6 +30,9 @@ const mockMessages = [
 
 const ChatPage = () => {
   const { user, isAuthenticated } = useAuth();
+  const [searchParams] = useSearchParams();
+  const targetUserId = searchParams.get("userId");
+  
   const {
     conversations,
     messages: realMessages,
@@ -36,16 +43,87 @@ const ChatPage = () => {
     sendMessage,
     uploadMedia,
     setTypingStatus,
+    getOrCreateConversation,
+    refreshConversations,
   } = useChat();
 
   const [message, setMessage] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [localMessages, setLocalMessages] = useState(mockMessages);
+  const [isCreatingConversation, setIsCreatingConversation] = useState(false);
+  const [otherUserProfile, setOtherUserProfile] = useState<{
+    id: string;
+    name: string;
+    avatar_url: string | null;
+  } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
+  const hasCreatedConversation = useRef(false);
 
   // For demo mode when not authenticated
   const [selectedMockMatch, setSelectedMockMatch] = useState(mockMatches[0]);
+
+  // Get active conversation for video call
+  const activeConversation = conversations.find((c) => c.id === activeConversationId);
+  const otherUserId = activeConversation?.other_user?.id || otherUserProfile?.id || null;
+
+  // Video call hook
+  const {
+    callState,
+    localStream,
+    remoteStream,
+    isMuted,
+    isVideoOff,
+    startCall,
+    answerCall,
+    rejectCall,
+    endCall,
+    toggleMute,
+    toggleVideo,
+  } = useVideoCall(activeConversationId, otherUserId);
+
+  // Auto-create conversation when navigating with userId
+  useEffect(() => {
+    const initConversation = async () => {
+      if (!isAuthenticated || !targetUserId || !user || hasCreatedConversation.current) return;
+      
+      // Don't start a conversation with yourself
+      if (targetUserId === user.id) return;
+      
+      hasCreatedConversation.current = true;
+      setIsCreatingConversation(true);
+
+      try {
+        // Fetch the other user's profile
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("user_id, name, avatar_url")
+          .eq("user_id", targetUserId)
+          .maybeSingle();
+
+        if (profile) {
+          setOtherUserProfile({
+            id: profile.user_id,
+            name: profile.name,
+            avatar_url: profile.avatar_url,
+          });
+        }
+
+        // Get or create conversation
+        const conversationId = await getOrCreateConversation(targetUserId);
+        if (conversationId) {
+          setActiveConversationId(conversationId);
+          await refreshConversations();
+        }
+      } catch (error) {
+        console.error("Error creating conversation:", error);
+      } finally {
+        setIsCreatingConversation(false);
+      }
+    };
+
+    initConversation();
+  }, [isAuthenticated, targetUserId, user, getOrCreateConversation, setActiveConversationId, refreshConversations]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -111,20 +189,41 @@ const ChatPage = () => {
     }
   };
 
-  const activeConversation = conversations.find((c) => c.id === activeConversationId);
   const otherUserTyping = activeConversation?.other_user?.id
     ? isTyping[activeConversation.other_user.id]
     : false;
 
   const showChatView = isAuthenticated
-    ? activeConversationId !== null
+    ? activeConversationId !== null || isCreatingConversation
     : selectedMockMatch !== null;
 
   const displayMessages = isAuthenticated ? realMessages : localMessages;
 
+  // Get display info for the active chat
+  const displayUser = activeConversation?.other_user || otherUserProfile;
+  const displayName = displayUser?.name || "User";
+  const displayAvatar = displayUser?.avatar_url || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop";
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
+
+      {/* Video Call Modal */}
+      <VideoCallModal
+        isOpen={callState !== "idle"}
+        callState={callState}
+        otherUserName={displayName}
+        otherUserAvatar={displayAvatar}
+        localStream={localStream}
+        remoteStream={remoteStream}
+        isMuted={isMuted}
+        isVideoOff={isVideoOff}
+        onAnswer={answerCall}
+        onReject={rejectCall}
+        onEnd={endCall}
+        onToggleMute={toggleMute}
+        onToggleVideo={toggleVideo}
+      />
 
       {/* Main container matching navbar max-width */}
       <div className="mx-auto flex max-w-6xl px-6 pt-20 md:pt-24 lg:px-12">
@@ -190,14 +289,14 @@ const ChatPage = () => {
                     </div>
                   </motion.button>
                 ))
-              ) : isAuthenticated && conversations.length === 0 ? (
+              ) : isAuthenticated && conversations.length === 0 && !isCreatingConversation ? (
                 <div className="py-8 text-center">
                   <p className="text-muted-foreground">No conversations yet</p>
                   <p className="mt-1 text-sm text-muted-foreground">
                     Match with someone to start chatting
                   </p>
                 </div>
-              ) : (
+              ) : !isAuthenticated ? (
                 // Mock data for demo
                 mockMatches.map((match) => (
                   <motion.button
@@ -238,7 +337,7 @@ const ChatPage = () => {
                     )}
                   </motion.button>
                 ))
-              )}
+              ) : null}
             </div>
           </div>
         </div>
@@ -249,7 +348,14 @@ const ChatPage = () => {
             !showChatView ? "hidden md:flex" : "flex"
           }`}
         >
-          {showChatView ? (
+          {isCreatingConversation ? (
+            <div className="flex flex-1 items-center justify-center">
+              <div className="text-center">
+                <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
+                <p className="mt-4 text-muted-foreground">Starting conversation...</p>
+              </div>
+            </div>
+          ) : showChatView ? (
             <>
               {/* Chat Header */}
               <div className="flex items-center justify-between border-b border-border bg-background px-4 py-3 md:px-6">
@@ -268,25 +374,14 @@ const ChatPage = () => {
                   </button>
                   <div className="h-11 w-11 overflow-hidden rounded-full">
                     <img
-                      src={
-                        isAuthenticated
-                          ? activeConversation?.other_user?.avatar_url ||
-                            "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop"
-                          : selectedMockMatch?.avatar
-                      }
-                      alt={
-                        isAuthenticated
-                          ? activeConversation?.other_user?.name
-                          : selectedMockMatch?.name
-                      }
+                      src={isAuthenticated ? displayAvatar : selectedMockMatch?.avatar}
+                      alt={isAuthenticated ? displayName : selectedMockMatch?.name}
                       className="h-full w-full object-cover"
                     />
                   </div>
                   <div>
                     <p className="font-medium text-foreground">
-                      {isAuthenticated
-                        ? activeConversation?.other_user?.name || "User"
-                        : selectedMockMatch?.name}
+                      {isAuthenticated ? displayName : selectedMockMatch?.name}
                     </p>
                     {otherUserTyping ? (
                       <p className="text-sm text-primary">Typing...</p>
@@ -298,10 +393,18 @@ const ChatPage = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                  <button
+                    onClick={startCall}
+                    disabled={!isAuthenticated || !activeConversationId}
+                    className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     <Phone className="h-5 w-5" />
                   </button>
-                  <button className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                  <button
+                    onClick={startCall}
+                    disabled={!isAuthenticated || !activeConversationId}
+                    className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     <Video className="h-5 w-5" />
                   </button>
                   <button className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
