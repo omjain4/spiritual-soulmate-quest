@@ -194,35 +194,49 @@ export const useLikes = () => {
       // Fetch received likes
       const { data: received } = await supabase
         .from('likes')
-        .select(`
-          id,
-          from_user_id,
-          is_super_like,
-          created_at,
-          profiles!likes_from_user_id_fkey(
-            name, photos, location, jain_rating, date_of_birth
-          )
-        `)
+        .select('id, from_user_id, is_super_like, created_at')
         .eq('to_user_id', user.id)
         .order('created_at', { ascending: false });
 
       // Fetch sent likes  
       const { data: sent } = await supabase
         .from('likes')
-        .select(`
-          id,
-          to_user_id,
-          is_super_like,
-          created_at,
-          profiles!likes_to_user_id_fkey(
-            name, photos, location, jain_rating, date_of_birth
-          )
-        `)
+        .select('id, to_user_id, is_super_like, created_at')
         .eq('from_user_id', user.id)
         .order('created_at', { ascending: false });
 
-      setReceivedLikes(received || []);
-      setSentLikes(sent || []);
+      // Get unique user IDs to fetch profiles
+      const fromUserIds = (received || []).map(l => l.from_user_id);
+      const toUserIds = (sent || []).map(l => l.to_user_id);
+      const allUserIds = [...new Set([...fromUserIds, ...toUserIds])];
+
+      // Fetch all profiles at once
+      let profilesMap: Record<string, any> = {};
+      if (allUserIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, name, photos, location, jain_rating, date_of_birth')
+          .in('user_id', allUserIds);
+
+        profilesMap = (profiles || []).reduce((acc, p) => {
+          acc[p.user_id] = p;
+          return acc;
+        }, {} as Record<string, any>);
+      }
+
+      // Map profiles to likes
+      const receivedWithProfiles = (received || []).map(like => ({
+        ...like,
+        profiles: profilesMap[like.from_user_id] || null
+      }));
+
+      const sentWithProfiles = (sent || []).map(like => ({
+        ...like,
+        profiles: profilesMap[like.to_user_id] || null
+      }));
+
+      setReceivedLikes(receivedWithProfiles);
+      setSentLikes(sentWithProfiles);
     } catch (error) {
       console.error('Error fetching likes:', error);
     } finally {

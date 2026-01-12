@@ -124,6 +124,42 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          conversation_id: string | null
+          created_at: string
+          description: string
+          from_user_id: string | null
+          id: string
+          is_read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string
+          description: string
+          from_user_id?: string | null
+          id?: string
+          is_read?: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string
+          description?: string
+          from_user_id?: string | null
+          id?: string
+          is_read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       preferences: {
         Row: {
           created_at: string

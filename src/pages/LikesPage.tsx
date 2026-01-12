@@ -6,9 +6,11 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import EmptyState from "@/components/EmptyState";
 import { useLikes, useMatches, useProfiles } from "@/hooks/useProfiles";
+import { useAuth } from "@/contexts/AuthContext";
 
 const LikesPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { receivedLikes, sentLikes, loading: likesLoading, refetch: refetchLikes } = useLikes();
   const { matches, loading: matchesLoading } = useMatches();
   const { likeProfile, skipProfile } = useProfiles();
@@ -123,12 +125,17 @@ const LikesPage = () => {
     );
   };
 
+  const handleStartChat = async (matchedUserId: string) => {
+    navigate(`/chat?userId=${matchedUserId}`);
+  };
+
   const renderMatchCard = (match: any) => {
     const profile = match.profile;
     if (!profile) return null;
     
     const photo = profile.photos?.[0] || '/placeholder.svg';
     const age = calculateAge(profile.date_of_birth);
+    const matchedUserId = match.user1_id === user?.id ? match.user2_id : match.user1_id;
     
     return (
       <motion.div
@@ -136,7 +143,7 @@ const LikesPage = () => {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         className="group relative cursor-pointer overflow-hidden rounded-2xl bg-card"
-        onClick={() => navigate('/chat')}
+        onClick={() => handleStartChat(matchedUserId)}
       >
         <div className="relative aspect-[3/4]">
           <img

@@ -6,22 +6,7 @@ import {
   MessageCircle, Shield, Users, Bell, LogOut, LogIn
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-
-interface Notification {
-  id: string;
-  type: "like" | "match" | "message";
-  title: string;
-  description: string;
-  avatar: string;
-  time: string;
-  read: boolean;
-}
-
-const mockNotifications: Notification[] = [
-  { id: "1", type: "like", title: "New Like!", description: "Priya Shah liked your profile", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop", time: "2m ago", read: false },
-  { id: "2", type: "match", title: "It's a Match!", description: "You matched with Ananya Jain", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop", time: "1h ago", read: false },
-  { id: "3", type: "message", title: "New Message", description: "Kavya: My family would love to...", avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&h=100&fit=crop", time: "3h ago", read: true },
-];
+import { useNotifications, Notification } from "@/hooks/useNotifications";
 
 const Navbar = () => {
   const location = useLocation();
@@ -29,12 +14,16 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [notifications, setNotifications] = useState(mockNotifications);
   const notificationRef = useRef<HTMLDivElement>(null);
   const { user, profile, isAuthenticated, logout } = useAuth();
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
 
   const isHomePage = location.pathname === "/";
-  const unreadCount = notifications.filter(n => !n.read).length;
+
+  // Get profile picture - use first photo or avatar_url
+  const profilePicture = profile?.photos?.[profile?.main_photo_index || 0] 
+    || profile?.avatar_url 
+    || "/placeholder.svg";
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -62,15 +51,48 @@ const Navbar = () => {
     setMobileMenuOpen(false);
   };
 
-  const markAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, read: true })));
+  const handleNotificationClick = async (notification: Notification) => {
+    if (!notification.is_read) {
+      await markAsRead(notification.id);
+    }
+    setNotificationsOpen(false);
+    
+    if (notification.type === "message" && notification.conversation_id) {
+      navigate("/chat");
+    } else if (notification.type === "like" || notification.type === "super_like") {
+      navigate("/likes");
+    } else if (notification.type === "match") {
+      navigate("/likes");
+    }
   };
 
-  const handleNotificationClick = (notification: Notification) => {
-    setNotifications(notifications.map(n => n.id === notification.id ? { ...n, read: true } : n));
-    setNotificationsOpen(false);
-    if (notification.type === "message") navigate("/chat");
-    else if (notification.type === "like" || notification.type === "match") navigate("/likes");
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays === 1) return "Yesterday";
+    return `${diffDays}d ago`;
+  };
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case "like":
+      case "super_like":
+        return "💕";
+      case "match":
+        return "🎉";
+      case "message":
+        return "💬";
+      default:
+        return "🔔";
+    }
   };
 
   const navLinks = isAuthenticated
@@ -140,7 +162,7 @@ const Navbar = () => {
                     <Bell className="h-5 w-5" />
                     {unreadCount > 0 && (
                       <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                        {unreadCount}
+                        {unreadCount > 9 ? "9+" : unreadCount}
                       </span>
                     )}
                   </button>
@@ -168,25 +190,29 @@ const Navbar = () => {
                               <button
                                 key={notification.id}
                                 onClick={() => handleNotificationClick(notification)}
-                                className={`flex w-full items-start gap-3 p-4 text-left transition-colors hover:bg-muted/50 ${!notification.read ? "bg-primary/5" : ""}`}
+                                className={`flex w-full items-start gap-3 p-4 text-left transition-colors hover:bg-muted/50 ${!notification.is_read ? "bg-primary/5" : ""}`}
                               >
                                 <div className="relative flex-shrink-0">
-                                  <div className="h-10 w-10 overflow-hidden rounded-full">
-                                    <img src={notification.avatar} alt="" className="h-full w-full object-cover" />
+                                  <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-muted">
+                                    {notification.from_user?.photos?.[0] ? (
+                                      <img src={notification.from_user.photos[0]} alt="" className="h-full w-full object-cover" />
+                                    ) : (
+                                      <span className="text-lg">{getNotificationIcon(notification.type)}</span>
+                                    )}
                                   </div>
-                                  {!notification.read && (
+                                  {!notification.is_read && (
                                     <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-primary" />
                                   )}
                                 </div>
                                 <div className="min-w-0 flex-1">
                                   <p className="text-sm font-medium text-foreground">{notification.title}</p>
                                   <p className="truncate text-xs text-muted-foreground">{notification.description}</p>
-                                  <p className="mt-1 text-xs text-muted-foreground/70">{notification.time}</p>
+                                  <p className="mt-1 text-xs text-muted-foreground/70">{formatTimeAgo(notification.created_at)}</p>
                                 </div>
                               </button>
                             ))
                           ) : (
-                            <div className="p-6 text-center text-sm text-muted-foreground">No notifications</div>
+                            <div className="p-6 text-center text-sm text-muted-foreground">No notifications yet</div>
                           )}
                         </div>
                         <Link
@@ -213,7 +239,7 @@ const Navbar = () => {
                   className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full ring-2 ring-white/20 transition-transform hover:scale-105"
                 >
                   <img
-                    src={profile?.avatar_url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop"}
+                    src={profilePicture}
                     alt="Profile"
                     className="h-full w-full object-cover"
                   />
@@ -264,7 +290,7 @@ const Navbar = () => {
                   <Bell className="h-5 w-5" />
                   {unreadCount > 0 && (
                     <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                      {unreadCount}
+                      {unreadCount > 9 ? "9+" : unreadCount}
                     </span>
                   )}
                 </button>
@@ -287,21 +313,29 @@ const Navbar = () => {
                         )}
                       </div>
                       <div className="max-h-64 overflow-y-auto">
-                        {notifications.map((notification) => (
-                          <button
-                            key={notification.id}
-                            onClick={() => handleNotificationClick(notification)}
-                            className={`flex w-full items-start gap-3 p-3 text-left transition-colors hover:bg-muted/50 ${!notification.read ? "bg-primary/5" : ""}`}
-                          >
-                            <div className="h-9 w-9 flex-shrink-0 overflow-hidden rounded-full">
-                              <img src={notification.avatar} alt="" className="h-full w-full object-cover" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium text-foreground">{notification.title}</p>
-                              <p className="truncate text-xs text-muted-foreground">{notification.description}</p>
-                            </div>
-                          </button>
-                        ))}
+                        {notifications.length > 0 ? (
+                          notifications.map((notification) => (
+                            <button
+                              key={notification.id}
+                              onClick={() => handleNotificationClick(notification)}
+                              className={`flex w-full items-start gap-3 p-3 text-left transition-colors hover:bg-muted/50 ${!notification.is_read ? "bg-primary/5" : ""}`}
+                            >
+                              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted">
+                                {notification.from_user?.photos?.[0] ? (
+                                  <img src={notification.from_user.photos[0]} alt="" className="h-full w-full object-cover" />
+                                ) : (
+                                  <span className="text-base">{getNotificationIcon(notification.type)}</span>
+                                )}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium text-foreground">{notification.title}</p>
+                                <p className="truncate text-xs text-muted-foreground">{notification.description}</p>
+                              </div>
+                            </button>
+                          ))
+                        ) : (
+                          <div className="p-4 text-center text-sm text-muted-foreground">No notifications</div>
+                        )}
                       </div>
                     </motion.div>
                   )}
@@ -352,18 +386,25 @@ const Navbar = () => {
                     <Link to="/trust-safety" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-muted">
                       <Shield className="h-5 w-5" /> Trust & Safety
                     </Link>
-                    <Link to="/family-mode" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-muted">
-                      <Users className="h-5 w-5" /> Family Mode
-                    </Link>
                     <hr className="my-3 border-border" />
                     <button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-destructive hover:bg-destructive/10">
-                      <LogOut className="h-5 w-5" /> Logout
+                      <LogOut className="h-5 w-5" /> Log Out
                     </button>
                   </>
                 ) : (
                   <>
                     <hr className="my-3 border-border" />
-                    <Link to="/auth" onClick={() => setMobileMenuOpen(false)} className="flex items-center justify-center gap-2 rounded-full bg-foreground px-4 py-3 text-sm font-medium text-background">
+                    <Link to="/trust-safety" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-muted">
+                      <Shield className="h-5 w-5" /> Trust & Safety
+                    </Link>
+                    <Link to="/family-mode" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-muted">
+                      <Users className="h-5 w-5" /> Family Mode
+                    </Link>
+                    <Link
+                      to="/auth"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="mt-4 flex items-center justify-center gap-2 rounded-full bg-foreground py-3 font-medium text-background"
+                    >
                       <LogIn className="h-5 w-5" /> Get Started
                     </Link>
                   </>
