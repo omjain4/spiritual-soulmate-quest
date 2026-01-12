@@ -26,7 +26,7 @@ type FieldErrors = Partial<Record<keyof ProfileEditFormData, string>>;
 
 const ProfilePage = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, profile, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<"profile" | "settings">("profile");
   const [isEditing, setIsEditing] = useState(false);
   const [isEditingPhotos, setIsEditingPhotos] = useState(false);
@@ -35,20 +35,20 @@ const ProfilePage = () => {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const [profileData, setProfileData] = useState({
-    name: user?.name || "User",
-    firstName: user?.name?.split(" ")[0] || "User",
-    lastName: user?.name?.split(" ")[1] || "",
+    name: profile?.name || "User",
+    firstName: profile?.name?.split(" ")[0] || "User",
+    lastName: profile?.name?.split(" ")[1] || "",
     age: 28,
-    birthDate: "1996-05-15",
-    gender: "male",
-    location: "Mumbai, Maharashtra",
-    occupation: "Software Engineer",
+    birthDate: profile?.date_of_birth || "1996-05-15",
+    gender: profile?.gender || "male",
+    location: profile?.location || "Mumbai, Maharashtra",
+    occupation: profile?.occupation || "Software Engineer",
     company: "Tech Corp",
-    education: "MBA, IIM Ahmedabad",
-    sect: "shwetambar-murtipujak",
+    education: profile?.education || "MBA, IIM Ahmedabad",
+    sect: profile?.community || "shwetambar-murtipujak",
     jainRating: 88,
     isVerified: true,
-    photos: [
+    photos: profile?.photos?.length ? profile.photos : [
       "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=500&fit=crop",
       "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=500&fit=crop",
       "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=500&fit=crop",
@@ -58,7 +58,7 @@ const ProfilePage = () => {
       { id: "2", prompt: "A value I live by is...", answer: "Ahimsa in thoughts and actions" },
       { id: "3", prompt: "On weekends you'll find me...", answer: "At the temple or hiking with friends" },
     ],
-    interests: ["pilgrimage", "meditation", "fitness", "business"],
+    interests: profile?.interests?.length ? profile.interests : ["pilgrimage", "meditation", "fitness", "business"],
   });
 
   const [editForm, setEditForm] = useState({

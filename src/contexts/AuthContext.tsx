@@ -1,74 +1,182 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import type { User, Session } from "@supabase/supabase-js";
 
-interface User {
+interface Profile {
   id: string;
+  user_id: string;
   name: string;
-  email: string;
-  avatar?: string;
+  email: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  date_of_birth: string | null;
+  gender: string | null;
+  location: string | null;
+  occupation: string | null;
+  education: string | null;
+  height: string | null;
+  community: string | null;
+  dietary_preference: string | null;
+  photos: string[];
+  interests: string[];
 }
 
 interface AuthContextType {
   user: User | null;
+  profile: Profile | null;
+  session: Session | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
+  updateProfile: (updates: Partial<Profile>) => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(() => {
-    // Check localStorage for existing session
-    const savedUser = localStorage.getItem("jain_jodi_user");
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchProfile = async (userId: string) => {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Error fetching profile:", error);
+      return null;
+    }
+    return data as Profile | null;
+  };
+
+  const refreshProfile = async () => {
+    if (user) {
+      const profileData = await fetchProfile(user.id);
+      setProfile(profileData);
+    }
+  };
+
+  useEffect(() => {
+    // Set up auth state listener BEFORE getting session
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, currentSession) => {
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+
+        if (currentSession?.user) {
+          // Use setTimeout to prevent potential race conditions
+          setTimeout(async () => {
+            const profileData = await fetchProfile(currentSession.user.id);
+            setProfile(profileData);
+          }, 0);
+        } else {
+          setProfile(null);
+        }
+        
+        setIsLoading(false);
+      }
+    );
+
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
+      setSession(initialSession);
+      setUser(initialSession?.user ?? null);
+      
+      if (initialSession?.user) {
+        fetchProfile(initialSession.user.id).then(setProfile);
+      }
+      
+      setIsLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const login = async (email: string, password: string) => {
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
     
-    // Mock successful login
-    const mockUser: User = {
-      id: "1",
-      name: "Rahul Jain",
-      email: email,
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
-    };
-    
-    setUser(mockUser);
-    localStorage.setItem("jain_jodi_user", JSON.stringify(mockUser));
+    if (error) {
+      throw error;
+    }
   };
 
   const signup = async (email: string, password: string, name: string) => {
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    
-    // Mock successful signup
-    const mockUser: User = {
-      id: Date.now().toString(),
-      name: name,
-      email: email,
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
-    };
-    
-    setUser(mockUser);
-    localStorage.setItem("jain_jodi_user", JSON.stringify(mockUser));
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: window.location.origin,
+      },
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    // Create profile for the new user
+    if (data.user) {
+      const { error: profileError } = await supabase.from("profiles").insert({
+        user_id: data.user.id,
+        name,
+        email,
+        photos: [],
+        interests: [],
+      });
+
+      if (profileError) {
+        console.error("Error creating profile:", profileError);
+      }
+    }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      throw error;
+    }
     setUser(null);
-    localStorage.removeItem("jain_jodi_user");
+    setProfile(null);
+    setSession(null);
+  };
+
+  const updateProfile = async (updates: Partial<Profile>) => {
+    if (!user) throw new Error("No user logged in");
+
+    const { error } = await supabase
+      .from("profiles")
+      .update(updates)
+      .eq("user_id", user.id);
+
+    if (error) {
+      throw error;
+    }
+
+    await refreshProfile();
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
+        profile,
+        session,
         isAuthenticated: !!user,
+        isLoading,
         login,
         signup,
         logout,
+        updateProfile,
+        refreshProfile,
       }}
     >
       {children}
