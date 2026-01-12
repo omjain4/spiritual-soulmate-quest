@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      call_history: {
+        Row: {
+          call_id: string
+          call_type: string
+          callee_id: string
+          caller_id: string
+          conversation_id: string
+          created_at: string
+          duration_seconds: number | null
+          ended_at: string | null
+          id: string
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          call_id: string
+          call_type?: string
+          callee_id: string
+          caller_id: string
+          conversation_id: string
+          created_at?: string
+          duration_seconds?: number | null
+          ended_at?: string | null
+          id?: string
+          started_at?: string | null
+          status: string
+        }
+        Update: {
+          call_id?: string
+          call_type?: string
+          callee_id?: string
+          caller_id?: string
+          conversation_id?: string
+          created_at?: string
+          duration_seconds?: number | null
+          ended_at?: string | null
+          id?: string
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_history_call_id_fkey"
+            columns: ["call_id"]
+            isOneToOne: false
+            referencedRelation: "video_calls"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "call_history_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           created_at: string
@@ -378,6 +435,7 @@ export type Database = {
       video_calls: {
         Row: {
           answer: Json | null
+          call_type: string | null
           callee_id: string
           caller_id: string
           conversation_id: string
@@ -391,6 +449,7 @@ export type Database = {
         }
         Insert: {
           answer?: Json | null
+          call_type?: string | null
           callee_id: string
           caller_id: string
           conversation_id: string
@@ -404,6 +463,7 @@ export type Database = {
         }
         Update: {
           answer?: Json | null
+          call_type?: string | null
           callee_id?: string
           caller_id?: string
           conversation_id?: string

@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Home, Search, Heart, MessageCircle, User } from "lucide-react";
+import { Home, Search, Heart, MessageCircle, Phone, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -20,10 +20,11 @@ const BottomNav = ({ activeId, onNavigate }: BottomNavProps) => {
 
   const navItems: NavItem[] = isAuthenticated 
     ? [
-        { id: "discover", icon: <Search className="h-6 w-6" />, label: "Discover" },
-        { id: "likes", icon: <Heart className="h-6 w-6" />, label: "Likes" },
-        { id: "messages", icon: <MessageCircle className="h-6 w-6" />, label: "Chat" },
-        { id: "profile", icon: <User className="h-6 w-6" />, label: "Profile" },
+        { id: "discover", icon: <Search className="h-5 w-5" />, label: "Discover" },
+        { id: "likes", icon: <Heart className="h-5 w-5" />, label: "Likes" },
+        { id: "messages", icon: <MessageCircle className="h-5 w-5" />, label: "Chat" },
+        { id: "calls", icon: <Phone className="h-5 w-5" />, label: "Calls" },
+        { id: "profile", icon: <User className="h-5 w-5" />, label: "Profile" },
       ]
     : [
         { id: "home", icon: <Home className="h-6 w-6" />, label: "Home" },

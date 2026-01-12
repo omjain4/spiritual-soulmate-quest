@@ -15,6 +15,7 @@ import ProfilePage from "./pages/ProfilePage";
 import WaitlistPage from "./pages/WaitlistPage";
 import ChatPage from "./pages/ChatPage";
 import LikesPage from "./pages/LikesPage";
+import CallsPage from "./pages/CallsPage";
 import AboutPage from "./pages/AboutPage";
 import HelpCenterPage from "./pages/HelpCenterPage";
 import HowItWorksPage from "./pages/HowItWorksPage";
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/waitlist" element={<WaitlistPage />} />
             <Route path="/chat" element={<ChatPage />} />
             <Route path="/likes" element={<LikesPage />} />
+            <Route path="/calls" element={<CallsPage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/help" element={<HelpCenterPage />} />
             <Route path="/how-it-works" element={<HowItWorksPage />} />
