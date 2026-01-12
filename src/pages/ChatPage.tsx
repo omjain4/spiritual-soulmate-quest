@@ -70,6 +70,7 @@ const ChatPage = () => {
   // Video call hook
   const {
     callState,
+    currentCall,
     localStream,
     remoteStream,
     isMuted,
@@ -82,6 +83,45 @@ const ChatPage = () => {
     toggleMute,
     toggleVideo,
   } = useVideoCall(activeConversationId, otherUserId);
+
+  // If a call comes in while no chat (or a different chat) is selected, jump to that conversation
+  useEffect(() => {
+    const syncIncomingCall = async () => {
+      if (!isAuthenticated || !currentCall || callState !== "ringing") return;
+
+      if (currentCall.conversation_id && activeConversationId !== currentCall.conversation_id) {
+        setActiveConversationId(currentCall.conversation_id);
+        await refreshConversations();
+      }
+
+      const callerId = currentCall.caller_id;
+      if (callerId && callerId !== user?.id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("user_id, name, avatar_url")
+          .eq("user_id", callerId)
+          .maybeSingle();
+
+        if (profile) {
+          setOtherUserProfile({
+            id: profile.user_id,
+            name: profile.name,
+            avatar_url: profile.avatar_url,
+          });
+        }
+      }
+    };
+
+    void syncIncomingCall();
+  }, [
+    isAuthenticated,
+    currentCall,
+    callState,
+    activeConversationId,
+    setActiveConversationId,
+    refreshConversations,
+    user?.id,
+  ]);
 
   // Auto-create conversation when navigating with userId
   useEffect(() => {
