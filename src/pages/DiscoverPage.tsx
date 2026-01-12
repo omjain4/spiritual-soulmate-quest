@@ -1,10 +1,12 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { Filter, LayoutGrid, Layers, Heart, X, MessageCircle, Sparkles, Bookmark, RotateCcw, Eye, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import EmptyState from "@/components/EmptyState";
+import FilterModal from "@/components/FilterModal";
+import NotificationPermissionBanner from "@/components/NotificationPermissionBanner";
 import { useToast } from "@/hooks/use-toast";
 import { useProfiles, Profile } from "@/hooks/useProfiles";
 import { useNavigate } from "react-router-dom";
@@ -30,6 +32,13 @@ const DiscoverPage = () => {
   const [direction, setDirection] = useState<"left" | "right" | null>(null);
   const [viewingProfile, setViewingProfile] = useState<Profile | null>(null);
   const [profilePhotoIndex, setProfilePhotoIndex] = useState(0);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    ageRange: [18, 50] as [number, number],
+    locations: [] as string[],
+    sects: [] as string[],
+    dietary: [] as string[],
+  });
 
   const calculateAge = (dob: string | null) => {
     if (!dob) return null;
@@ -43,6 +52,48 @@ const DiscoverPage = () => {
     return age;
   };
 
+  // Filter profiles based on selected filters
+  const filteredProfiles = useMemo(() => {
+    return profiles.filter((profile) => {
+      // Age filter
+      const age = calculateAge(profile.date_of_birth);
+      if (age !== null && (age < filters.ageRange[0] || age > filters.ageRange[1])) {
+        return false;
+      }
+
+      // Location filter
+      if (filters.locations.length > 0 && profile.location) {
+        if (!filters.locations.some((loc) => profile.location?.toLowerCase().includes(loc.toLowerCase()))) {
+          return false;
+        }
+      }
+
+      // Sect filter
+      if (filters.sects.length > 0 && profile.sect) {
+        if (!filters.sects.includes(profile.sect)) {
+          return false;
+        }
+      }
+
+      // Dietary filter
+      if (filters.dietary.length > 0 && profile.dietary_preference) {
+        const dietaryMap: Record<string, string[]> = {
+          "Strict Jain (No root vegetables)": ["strict-jain"],
+          "Jain Vegetarian": ["jain-veg"],
+          "Vegetarian": ["vegetarian"],
+          "Flexible": ["flexible"],
+        };
+        const allowedPrefs = filters.dietary.flatMap((d) => dietaryMap[d] || []);
+        if (!allowedPrefs.includes(profile.dietary_preference)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [profiles, filters]);
+
+  const currentFilteredProfile = filteredProfiles[currentIndex] || null;
   const getProfilePhotos = (profile: Profile) => profile.photos?.length ? profile.photos : ['/placeholder.svg'];
   const getMainPhoto = (profile: Profile) => {
     const photos = getProfilePhotos(profile);
@@ -109,6 +160,8 @@ const DiscoverPage = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
 
+      <NotificationPermissionBanner />
+      
       <div className="mx-auto max-w-6xl px-6 pb-24 pt-28 md:px-12 md:pt-32 lg:px-20">
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-10 flex items-end justify-between">
@@ -125,22 +178,40 @@ const DiscoverPage = () => {
                 <LayoutGrid className="h-5 w-5" />
               </button>
             </div>
-            <button className="flex h-12 w-12 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+            <button 
+              onClick={() => setShowFilters(true)}
+              className={`flex h-12 w-12 items-center justify-center rounded-full border transition-colors ${
+                filters.locations.length > 0 || filters.sects.length > 0 || filters.dietary.length > 0
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
+            >
               <Filter className="h-5 w-5" />
             </button>
           </div>
         </motion.div>
 
-        {isEmpty ? (
+        {isEmpty || filteredProfiles.length === 0 ? (
           <EmptyState
             icon={Heart}
-            title="No profiles yet"
-            description="We're looking for matches based on your preferences. Check back soon!"
-            action={{ label: "Refresh", onClick: refetch }}
+            title={filters.locations.length > 0 || filters.sects.length > 0 || filters.dietary.length > 0 
+              ? "No matches with current filters" 
+              : "No profiles yet"}
+            description={filters.locations.length > 0 || filters.sects.length > 0 || filters.dietary.length > 0
+              ? "Try adjusting your filters to see more profiles"
+              : "We're looking for matches based on your preferences. Check back soon!"}
+            action={{ 
+              label: filters.locations.length > 0 || filters.sects.length > 0 || filters.dietary.length > 0 
+                ? "Clear Filters" 
+                : "Refresh", 
+              onClick: filters.locations.length > 0 || filters.sects.length > 0 || filters.dietary.length > 0
+                ? () => setFilters({ ageRange: [18, 50], locations: [], sects: [], dietary: [] })
+                : refetch 
+            }}
           />
         ) : viewMode === "grid" ? (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {profiles.map((profile, index) => (
+            {filteredProfiles.map((profile, index) => (
               <motion.div key={profile.profile_id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }} className="group cursor-pointer">
                 <div className="overflow-hidden rounded-2xl bg-card transition-all hover:shadow-xl">
                   <div className="relative aspect-[3/4]">
@@ -176,21 +247,21 @@ const DiscoverPage = () => {
               {/* Card */}
               <div className="relative h-[600px] w-full max-w-md md:h-[650px]">
                 <AnimatePresence mode="wait">
-                  {currentProfile ? (
-                    <motion.div key={currentProfile.profile_id} className="absolute inset-0" variants={cardVariants} initial="enter" animate="center" exit={direction === "left" ? "exitLeft" : "exitRight"} transition={{ type: "spring", stiffness: 300, damping: 30 }} drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.8} onDragEnd={handleDragEnd} whileDrag={{ cursor: "grabbing" }}>
+                  {currentFilteredProfile ? (
+                    <motion.div key={currentFilteredProfile.profile_id} className="absolute inset-0" variants={cardVariants} initial="enter" animate="center" exit={direction === "left" ? "exitLeft" : "exitRight"} transition={{ type: "spring", stiffness: 300, damping: 30 }} drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.8} onDragEnd={handleDragEnd} whileDrag={{ cursor: "grabbing" }}>
                       <div className="h-full overflow-hidden rounded-3xl bg-card shadow-2xl">
                         <div className="relative h-full">
-                          <img src={getMainPhoto(currentProfile)} alt={currentProfile.name} className="h-full w-full object-cover" draggable={false} />
+                          <img src={getMainPhoto(currentFilteredProfile)} alt={currentFilteredProfile.name} className="h-full w-full object-cover" draggable={false} />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                           <motion.div className="absolute left-6 top-6 rounded-xl bg-red-500 px-4 py-2 text-lg font-bold text-white" style={{ opacity: direction === "left" ? 1 : 0 }}>NOPE</motion.div>
                           <motion.div className="absolute right-6 top-6 rounded-xl bg-green-500 px-4 py-2 text-lg font-bold text-white" style={{ opacity: direction === "right" ? 1 : 0 }}>LIKE</motion.div>
-                          <div className="absolute right-4 top-4"><div className="flex items-center gap-1 rounded-full bg-white/20 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm"><Sparkles className="h-4 w-4" />{currentProfile.match_score}% Match</div></div>
+                          <div className="absolute right-4 top-4"><div className="flex items-center gap-1 rounded-full bg-white/20 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm"><Sparkles className="h-4 w-4" />{currentFilteredProfile.match_score}% Match</div></div>
                           <div className="absolute bottom-0 left-0 right-0 p-6">
-                            <h2 className="font-serif text-4xl font-light text-white">{currentProfile.name}{calculateAge(currentProfile.date_of_birth) && `, ${calculateAge(currentProfile.date_of_birth)}`}</h2>
-                            <p className="mt-1 text-white/70">{currentProfile.location || "Location not set"}</p>
-                            {currentProfile.sect && <span className="mt-3 inline-block rounded-full bg-white/20 px-4 py-1.5 text-sm font-medium text-white backdrop-blur-sm">{currentProfile.sect}</span>}
+                            <h2 className="font-serif text-4xl font-light text-white">{currentFilteredProfile.name}{calculateAge(currentFilteredProfile.date_of_birth) && `, ${calculateAge(currentFilteredProfile.date_of_birth)}`}</h2>
+                            <p className="mt-1 text-white/70">{currentFilteredProfile.location || "Location not set"}</p>
+                            {currentFilteredProfile.sect && <span className="mt-3 inline-block rounded-full bg-white/20 px-4 py-1.5 text-sm font-medium text-white backdrop-blur-sm">{currentFilteredProfile.sect}</span>}
                             <div className="mt-4 space-y-2">
-                              {currentProfile.prompts?.slice(0, 1).map((prompt, idx) => (
+                              {currentFilteredProfile.prompts?.slice(0, 1).map((prompt, idx) => (
                                 <div key={idx} className="rounded-xl bg-white/10 p-4 backdrop-blur-sm">
                                   <p className="text-xs text-white/60">{prompt.question}</p>
                                   <p className="mt-1 text-sm text-white">{prompt.answer}</p>
@@ -215,27 +286,27 @@ const DiscoverPage = () => {
               {/* Right Side Actions - Desktop */}
               <div className="hidden flex-col gap-4 md:flex">
                 <motion.button onClick={handleSave} className="flex h-14 w-14 items-center justify-center rounded-full border border-border text-blue-500 transition-all hover:bg-blue-50" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}><Bookmark className="h-6 w-6" /></motion.button>
-                <motion.button onClick={() => { if (currentProfile) { setViewingProfile(currentProfile); setProfilePhotoIndex(0); } }} className="flex h-14 w-14 items-center justify-center rounded-full border border-border text-foreground transition-all hover:bg-muted" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}><Eye className="h-6 w-6" /></motion.button>
+                <motion.button onClick={() => { if (currentFilteredProfile) { setViewingProfile(currentFilteredProfile); setProfilePhotoIndex(0); } }} className="flex h-14 w-14 items-center justify-center rounded-full border border-border text-foreground transition-all hover:bg-muted" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}><Eye className="h-6 w-6" /></motion.button>
                 <motion.button onClick={() => handleSwipe("right")} className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-all" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}><Heart className="h-8 w-8" fill="white" /></motion.button>
                 <motion.button onClick={() => navigate('/chat')} className="flex h-14 w-14 items-center justify-center rounded-full border border-border text-purple-500 transition-all hover:bg-purple-50" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}><MessageCircle className="h-6 w-6" /></motion.button>
               </div>
             </div>
 
             {/* Mobile Action Buttons */}
-            {currentProfile && (
+            {currentFilteredProfile && (
               <div className="mt-8 flex items-center justify-center gap-3 md:hidden">
                 <motion.button onClick={handleUndo} disabled={currentIndex === 0} className="flex h-11 w-11 items-center justify-center rounded-full border border-border text-muted-foreground transition-all hover:bg-muted disabled:opacity-30" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}><RotateCcw className="h-5 w-5" /></motion.button>
                 <motion.button onClick={() => handleSwipe("left")} className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-red-200 bg-white text-red-500 shadow-lg transition-all hover:bg-red-50" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}><X className="h-7 w-7" /></motion.button>
                 <motion.button onClick={handleSave} className="flex h-11 w-11 items-center justify-center rounded-full border border-border text-blue-500 transition-all hover:bg-blue-50" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}><Bookmark className="h-5 w-5" /></motion.button>
-                <motion.button onClick={() => { setViewingProfile(currentProfile); setProfilePhotoIndex(0); }} className="flex h-11 w-11 items-center justify-center rounded-full border border-border text-foreground transition-all hover:bg-muted" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}><Eye className="h-5 w-5" /></motion.button>
+                <motion.button onClick={() => { setViewingProfile(currentFilteredProfile); setProfilePhotoIndex(0); }} className="flex h-11 w-11 items-center justify-center rounded-full border border-border text-foreground transition-all hover:bg-muted" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}><Eye className="h-5 w-5" /></motion.button>
                 <motion.button onClick={() => handleSwipe("right")} className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-all" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}><Heart className="h-7 w-7" fill="white" /></motion.button>
                 <motion.button onClick={() => navigate('/chat')} className="flex h-11 w-11 items-center justify-center rounded-full border border-border text-purple-500 transition-all hover:bg-purple-50" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}><MessageCircle className="h-5 w-5" /></motion.button>
               </div>
             )}
 
-            {currentProfile && (
+            {currentFilteredProfile && (
               <div className="mt-6 flex justify-center gap-1.5">
-                {profiles.map((_, idx) => (
+                {filteredProfiles.map((_, idx) => (
                   <div key={idx} className={`h-1.5 w-8 rounded-full transition-colors ${idx < currentIndex ? "bg-primary" : idx === currentIndex ? "bg-primary/50" : "bg-muted"}`} />
                 ))}
               </div>
@@ -337,9 +408,20 @@ const DiscoverPage = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Filter Modal */}
+      <FilterModal
+        open={showFilters}
+        onOpenChange={setShowFilters}
+        filters={filters}
+        onApply={setFilters}
+      />
+
       <Footer />
     </div>
   );
+};
+
+export default DiscoverPage;
 };
 
 export default DiscoverPage;
