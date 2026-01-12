@@ -36,6 +36,8 @@ const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState<"profile" | "settings">("profile");
   const [isEditing, setIsEditing] = useState(false);
   const [isEditingPhotos, setIsEditingPhotos] = useState(false);
+  const [isEditingInterests, setIsEditingInterests] = useState(false);
+  const [isEditingCareer, setIsEditingCareer] = useState(false);
   const [editingPrompt, setEditingPrompt] = useState<string | null>(null);
   const [tempPromptAnswer, setTempPromptAnswer] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -45,11 +47,14 @@ const ProfilePage = () => {
   const [photos, setPhotos] = useState<string[]>([]);
   const [mainPhotoIndex, setMainPhotoIndex] = useState(0);
   const [prompts, setPrompts] = useState<{id: string; prompt: string; answer: string}[]>([]);
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+  const [tempCareer, setTempCareer] = useState({ occupation: "", education: "" });
 
   useEffect(() => {
     if (profile) {
       setPhotos(profile.photos || []);
       setMainPhotoIndex(profile.main_photo_index || 0);
+      setSelectedInterests(profile.interests || []);
       const profilePrompts = Array.isArray(profile.prompts) ? profile.prompts : [];
       setPrompts(profilePrompts.map((p: any, i: number) => ({
         id: String(i),
@@ -211,6 +216,57 @@ const ProfilePage = () => {
     
     setEditingPrompt(null);
     setTempPromptAnswer("");
+    await refreshProfile();
+  };
+
+  const handleInterestToggle = (id: string) => {
+    setSelectedInterests((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleSaveInterests = async () => {
+    if (!user) return;
+    setIsSaving(true);
+    try {
+      await supabase
+        .from('profiles')
+        .update({ interests: selectedInterests })
+        .eq('user_id', user.id);
+      await refreshProfile();
+      setIsEditingInterests(false);
+      toast({ title: "Interests updated!", description: "Your interests have been saved." });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to save interests.", variant: "destructive" });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleOpenCareerEdit = () => {
+    setTempCareer({
+      occupation: profile?.occupation || "",
+      education: profile?.education || "",
+    });
+    setIsEditingCareer(true);
+  };
+
+  const handleSaveCareer = async () => {
+    if (!user) return;
+    setIsSaving(true);
+    try {
+      await supabase
+        .from('profiles')
+        .update({ occupation: tempCareer.occupation, education: tempCareer.education })
+        .eq('user_id', user.id);
+      await refreshProfile();
+      setIsEditingCareer(false);
+      toast({ title: "Career info updated!", description: "Your changes have been saved." });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to save career info.", variant: "destructive" });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handlePhotosChange = async (newPhotos: string[]) => {
@@ -425,10 +481,15 @@ const ProfilePage = () => {
               >
                 <div className="mb-4 flex items-center justify-between">
                   <h3 className="font-medium">My Interests</h3>
-                  <button className="text-sm font-medium text-primary">Edit</button>
+                  <button 
+                    onClick={() => setIsEditingInterests(true)}
+                    className="text-sm font-medium text-primary"
+                  >
+                    Edit
+                  </button>
                 </div>
                 <InterestStamps 
-                  stamps={defaultInterestStamps.slice(0, 8)} 
+                  stamps={defaultInterestStamps} 
                   selectedIds={profile?.interests || []} 
                   readonly 
                 />
@@ -470,9 +531,17 @@ const ProfilePage = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.35 }}
               >
-                <div className="mb-4 flex items-center gap-2">
-                  <GraduationCap className="h-5 w-5 text-primary" />
-                  <h3 className="font-medium">Education & Career</h3>
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <GraduationCap className="h-5 w-5 text-primary" />
+                    <h3 className="font-medium">Education & Career</h3>
+                  </div>
+                  <button 
+                    onClick={handleOpenCareerEdit}
+                    className="text-sm font-medium text-primary"
+                  >
+                    Edit
+                  </button>
                 </div>
                 <div className="space-y-3">
                   {profile?.occupation && (
@@ -690,6 +759,91 @@ const ProfilePage = () => {
             <div className="flex gap-3">
               <button onClick={() => setEditingPrompt(null)} className="flex-1 rounded-full border border-border py-2 text-sm hover:bg-muted">Cancel</button>
               <button onClick={handlePromptSave} className="flex-1 rounded-full bg-foreground py-2 text-sm text-background">Save</button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Interests Dialog */}
+      <Dialog open={isEditingInterests} onOpenChange={setIsEditingInterests}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Interests</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Select interests that describe you. These help us find better matches.
+            </p>
+            <InterestStamps 
+              stamps={defaultInterestStamps} 
+              selectedIds={selectedInterests} 
+              onToggle={handleInterestToggle}
+            />
+            <div className="flex gap-3 pt-4">
+              <button 
+                onClick={() => {
+                  setSelectedInterests(profile?.interests || []);
+                  setIsEditingInterests(false);
+                }} 
+                className="flex-1 rounded-full border border-border py-2 text-sm hover:bg-muted"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSaveInterests}
+                disabled={isSaving}
+                className="flex flex-1 items-center justify-center gap-2 rounded-full bg-foreground py-2 text-sm text-background disabled:opacity-50"
+              >
+                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Career Dialog */}
+      <Dialog open={isEditingCareer} onOpenChange={setIsEditingCareer}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Education & Career</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="careerOccupation">Occupation</Label>
+              <Input
+                id="careerOccupation"
+                value={tempCareer.occupation}
+                onChange={(e) => setTempCareer(prev => ({ ...prev, occupation: e.target.value }))}
+                placeholder="e.g. Software Engineer"
+                className="rounded-xl"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="careerEducation">Education</Label>
+              <Input
+                id="careerEducation"
+                value={tempCareer.education}
+                onChange={(e) => setTempCareer(prev => ({ ...prev, education: e.target.value }))}
+                placeholder="e.g. MBA from IIM"
+                className="rounded-xl"
+              />
+            </div>
+            <div className="flex gap-3 pt-4">
+              <button 
+                onClick={() => setIsEditingCareer(false)} 
+                className="flex-1 rounded-full border border-border py-2 text-sm hover:bg-muted"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSaveCareer}
+                disabled={isSaving}
+                className="flex flex-1 items-center justify-center gap-2 rounded-full bg-foreground py-2 text-sm text-background disabled:opacity-50"
+              >
+                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save
+              </button>
             </div>
           </div>
         </DialogContent>

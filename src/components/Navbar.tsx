@@ -150,9 +150,17 @@ const Navbar = () => {
             ))}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {isAuthenticated ? (
               <>
+                {/* Family Mode Button */}
+                <Link
+                  to="/family-mode"
+                  className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${isHomePage && !scrolled ? "bg-white/10 text-white hover:bg-white/20" : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+                  title="Family Mode"
+                >
+                  <Users className="h-5 w-5" />
+                </Link>
                 {/* Notifications Dropdown */}
                 <div className="relative" ref={notificationRef}>
                   <button
@@ -282,65 +290,74 @@ const Navbar = () => {
 
           <div className="flex items-center gap-2">
             {isAuthenticated && (
-              <div className="relative" ref={notificationRef}>
-                <button
-                  onClick={() => setNotificationsOpen(!notificationsOpen)}
-                  className={`relative flex h-9 w-9 items-center justify-center rounded-full ${isHomePage && !scrolled ? "bg-white/10 text-white" : "bg-muted text-muted-foreground"}`}
+              <>
+                {/* Family Mode Button - Mobile */}
+                <Link
+                  to="/family-mode"
+                  className={`flex h-9 w-9 items-center justify-center rounded-full ${isHomePage && !scrolled ? "bg-white/10 text-white" : "bg-muted text-muted-foreground"}`}
                 >
-                  <Bell className="h-5 w-5" />
-                  {unreadCount > 0 && (
-                    <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                      {unreadCount > 9 ? "9+" : unreadCount}
-                    </span>
-                  )}
-                </button>
+                  <Users className="h-5 w-5" />
+                </Link>
+                <div className="relative" ref={notificationRef}>
+                  <button
+                    onClick={() => setNotificationsOpen(!notificationsOpen)}
+                    className={`relative flex h-9 w-9 items-center justify-center rounded-full ${isHomePage && !scrolled ? "bg-white/10 text-white" : "bg-muted text-muted-foreground"}`}
+                  >
+                    <Bell className="h-5 w-5" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                        {unreadCount > 9 ? "9+" : unreadCount}
+                      </span>
+                    )}
+                  </button>
 
-                <AnimatePresence>
-                  {notificationsOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute right-0 top-12 w-72 overflow-hidden rounded-2xl border border-border bg-card shadow-xl"
-                    >
-                      <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                        <h3 className="font-medium text-foreground">Notifications</h3>
-                        {unreadCount > 0 && (
-                          <button onClick={markAllAsRead} className="text-xs text-primary hover:underline">
-                            Mark all read
-                          </button>
-                        )}
-                      </div>
-                      <div className="max-h-64 overflow-y-auto">
-                        {notifications.length > 0 ? (
-                          notifications.map((notification) => (
-                            <button
-                              key={notification.id}
-                              onClick={() => handleNotificationClick(notification)}
-                              className={`flex w-full items-start gap-3 p-3 text-left transition-colors hover:bg-muted/50 ${!notification.is_read ? "bg-primary/5" : ""}`}
-                            >
-                              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted">
-                                {notification.from_user?.photos?.[0] ? (
-                                  <img src={notification.from_user.photos[0]} alt="" className="h-full w-full object-cover" />
-                                ) : (
-                                  <span className="text-base">{getNotificationIcon(notification.type)}</span>
-                                )}
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-medium text-foreground">{notification.title}</p>
-                                <p className="truncate text-xs text-muted-foreground">{notification.description}</p>
-                              </div>
+                  <AnimatePresence>
+                    {notificationsOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 top-12 w-72 overflow-hidden rounded-2xl border border-border bg-card shadow-xl"
+                      >
+                        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                          <h3 className="font-medium text-foreground">Notifications</h3>
+                          {unreadCount > 0 && (
+                            <button onClick={markAllAsRead} className="text-xs text-primary hover:underline">
+                              Mark all read
                             </button>
-                          ))
-                        ) : (
-                          <div className="p-4 text-center text-sm text-muted-foreground">No notifications</div>
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+                          )}
+                        </div>
+                        <div className="max-h-64 overflow-y-auto">
+                          {notifications.length > 0 ? (
+                            notifications.map((notification) => (
+                              <button
+                                key={notification.id}
+                                onClick={() => handleNotificationClick(notification)}
+                                className={`flex w-full items-start gap-3 p-3 text-left transition-colors hover:bg-muted/50 ${!notification.is_read ? "bg-primary/5" : ""}`}
+                              >
+                                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted">
+                                  {notification.from_user?.photos?.[0] ? (
+                                    <img src={notification.from_user.photos[0]} alt="" className="h-full w-full object-cover" />
+                                  ) : (
+                                    <span className="text-base">{getNotificationIcon(notification.type)}</span>
+                                  )}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm font-medium text-foreground">{notification.title}</p>
+                                  <p className="truncate text-xs text-muted-foreground">{notification.description}</p>
+                                </div>
+                              </button>
+                            ))
+                          ) : (
+                            <div className="p-4 text-center text-sm text-muted-foreground">No notifications</div>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </>
             )}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
