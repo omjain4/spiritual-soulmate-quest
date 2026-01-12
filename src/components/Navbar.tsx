@@ -31,7 +31,7 @@ const Navbar = () => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState(mockNotifications);
   const notificationRef = useRef<HTMLDivElement>(null);
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, profile, isAuthenticated, logout } = useAuth();
 
   const isHomePage = location.pathname === "/";
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -213,7 +213,7 @@ const Navbar = () => {
                   className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full ring-2 ring-white/20 transition-transform hover:scale-105"
                 >
                   <img
-                    src={user?.avatar || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop"}
+                    src={profile?.avatar_url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop"}
                     alt="Profile"
                     className="h-full w-full object-cover"
                   />
