@@ -9,6 +9,8 @@ interface ChatMessageProps {
   isOwn: boolean;
   isRead: boolean;
   createdAt: string;
+  senderAvatar?: string | null;
+  senderName?: string;
 }
 
 const ChatMessage = ({
@@ -18,6 +20,8 @@ const ChatMessage = ({
   isOwn,
   isRead,
   createdAt,
+  senderAvatar,
+  senderName,
 }: ChatMessageProps) => {
   const time = format(new Date(createdAt), "h:mm a");
 
@@ -78,10 +82,26 @@ const ChatMessage = ({
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
+      className={`flex items-end gap-2 ${isOwn ? "justify-end" : "justify-start"}`}
     >
+      {/* Avatar for other user's messages */}
+      {!isOwn && (
+        <div className="mb-1 h-8 w-8 flex-shrink-0 overflow-hidden rounded-full bg-muted">
+          {senderAvatar ? (
+            <img 
+              src={senderAvatar} 
+              alt={senderName || "User"} 
+              className="h-full w-full object-cover" 
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-xs font-medium text-muted-foreground">
+              {senderName?.charAt(0) || "?"}
+            </div>
+          )}
+        </div>
+      )}
       <div
-        className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+        className={`max-w-[75%] rounded-2xl px-4 py-3 ${
           isOwn
             ? "bg-foreground text-background"
             : "bg-muted text-foreground"

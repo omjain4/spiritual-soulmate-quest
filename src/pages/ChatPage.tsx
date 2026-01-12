@@ -470,6 +470,8 @@ const ChatPage = () => {
                           isOwn={msg.sender_id === user?.id}
                           isRead={msg.is_read}
                           createdAt={msg.created_at}
+                          senderAvatar={msg.sender_id !== user?.id ? displayAvatar : undefined}
+                          senderName={msg.sender_id !== user?.id ? displayName : undefined}
                         />
                       ))
                     : localMessages.map((msg) => (
