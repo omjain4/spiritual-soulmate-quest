@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
+import { profileUpdateSchema } from "@/lib/validations";
 
 interface Profile {
   id: string;
@@ -152,9 +153,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const updateProfile = async (updates: Partial<Profile>) => {
     if (!user) throw new Error("No user logged in");
 
+    // Validate profile update data
+    const validationResult = profileUpdateSchema.safeParse(updates);
+
+    if (!validationResult.success) {
+      const errorMessages = validationResult.error.errors.map(e => e.message).join(", ");
+      throw new Error(`Validation failed: ${errorMessages}`);
+    }
+
+    const validatedData = validationResult.data;
+
     const { error } = await supabase
       .from("profiles")
-      .update(updates)
+      .update(validatedData)
       .eq("user_id", user.id);
 
     if (error) {

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { messageSchema } from "@/lib/validations";
 
 interface Message {
   id: string;
@@ -117,14 +118,28 @@ export const useChat = () => {
     mediaUrl?: string,
     mediaType?: string
   ) => {
-    if (!user) return;
+    if (!user) return false;
+
+    // Validate message data
+    const validationResult = messageSchema.safeParse({
+      content: content || null,
+      media_url: mediaUrl || null,
+      media_type: mediaType || null,
+    });
+
+    if (!validationResult.success) {
+      console.error("Message validation failed:", validationResult.error.errors);
+      return false;
+    }
+
+    const validatedData = validationResult.data;
 
     const { error } = await supabase.from("messages").insert({
       conversation_id: conversationId,
       sender_id: user.id,
-      content,
-      media_url: mediaUrl || null,
-      media_type: mediaType || null,
+      content: validatedData.content,
+      media_url: validatedData.media_url,
+      media_type: validatedData.media_type,
     });
 
     if (error) {
@@ -137,7 +152,6 @@ export const useChat = () => {
       .from("conversations")
       .update({ last_message_at: new Date().toISOString() })
       .eq("id", conversationId);
-
     return true;
   }, [user]);
 
