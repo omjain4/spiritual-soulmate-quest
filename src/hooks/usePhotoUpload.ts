@@ -25,11 +25,14 @@ export const usePhotoUpload = () => {
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
+      // Use signed URL for private bucket (24 hour expiry for profile photos)
+      const { data, error } = await supabase.storage
         .from('chat-media')
-        .getPublicUrl(filePath);
+        .createSignedUrl(filePath, 86400);
 
-      return publicUrl;
+      if (error) throw error;
+
+      return data.signedUrl;
     } catch (error) {
       console.error('Error uploading photo:', error);
       toast({
