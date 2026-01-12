@@ -2,14 +2,41 @@ import { motion } from "framer-motion";
 import { Sunset, Leaf, Moon, Sun } from "lucide-react";
 
 interface ChauviharWidgetProps {
-  chauviharLevel: "strict" | "moderate" | "flexible" | "none";
-  dietaryPreference: "strict-jain" | "jain-veg" | "vegetarian" | "flexible";
+  chauviharLevel: string;
+  dietaryPreference: string;
 }
 
 const ChauviharWidget = ({
   chauviharLevel,
   dietaryPreference,
 }: ChauviharWidgetProps) => {
+  // Map database values to widget values
+  const mapChauviharLevel = (level: string): "strict" | "moderate" | "flexible" | "none" => {
+    const mapping: Record<string, "strict" | "moderate" | "flexible" | "none"> = {
+      always: "strict",
+      mostly: "moderate",
+      sometimes: "flexible",
+      rarely: "none",
+      strict: "strict",
+      moderate: "moderate",
+      flexible: "flexible",
+      none: "none",
+    };
+    return mapping[level] || "moderate";
+  };
+
+  const mapDietaryPreference = (pref: string): "strict-jain" | "jain-veg" | "vegetarian" | "flexible" => {
+    const mapping: Record<string, "strict-jain" | "jain-veg" | "vegetarian" | "flexible"> = {
+      "strict-jain": "strict-jain",
+      "jain-veg": "jain-veg",
+      vegetarian: "vegetarian",
+      flexible: "flexible",
+    };
+    return mapping[pref] || "vegetarian";
+  };
+
+  const normalizedChauvihar = mapChauviharLevel(chauviharLevel);
+  const normalizedDiet = mapDietaryPreference(dietaryPreference);
   const chauviharConfig = {
     strict: {
       label: "Strict Chauvihar",
@@ -64,8 +91,8 @@ const ChauviharWidget = ({
     },
   };
 
-  const chauvihar = chauviharConfig[chauviharLevel];
-  const diet = dietConfig[dietaryPreference];
+  const chauvihar = chauviharConfig[normalizedChauvihar];
+  const diet = dietConfig[normalizedDiet];
 
   return (
     <div className="space-y-4">
