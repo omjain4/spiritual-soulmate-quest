@@ -411,8 +411,8 @@ const ProfilePage = () => {
                   <h3 className="font-medium">My Spiritual Journey</h3>
                 </div>
                 <ChauviharWidget 
-                  chauviharLevel={(profile?.chauvihar_level as "strict" | "moderate" | "flexible" | "none") || "moderate"} 
-                  dietaryPreference={(profile?.dietary_preference as "strict-jain" | "jain-veg" | "vegetarian" | "flexible") || "vegetarian"} 
+                  chauviharLevel={profile?.chauvihar_level || "moderate"} 
+                  dietaryPreference={profile?.dietary_preference || "vegetarian"} 
                 />
               </motion.div>
 
