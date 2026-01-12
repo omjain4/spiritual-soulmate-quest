@@ -1,45 +1,30 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, Sparkles, User, Calendar, MapPin, Briefcase, Check, AlertCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight, Sparkles, User, Calendar, MapPin, Briefcase, Check, AlertCircle, Camera, Sliders, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import SelectionCard from "@/components/SelectionCard";
 import QuizQuestion from "@/components/QuizQuestion";
 import PromptCard from "@/components/PromptCard";
+import PreferencesStep from "@/components/PreferencesStep";
+import PhotoUploadStep from "@/components/PhotoUploadStep";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { basicInfoSchema, BasicInfoFormData } from "@/lib/validations";
 import { z } from "zod";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { usePhotoUpload } from "@/hooks/usePhotoUpload";
+import { useToast } from "@/hooks/use-toast";
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 8;
 
 const sects = [
-  {
-    id: "digambar",
-    title: "Digambar",
-    description: "Sky-clad tradition",
-    icon: "🕉️",
-  },
-  {
-    id: "shwetambar-sthanakvasi",
-    title: "Shwetambar - Sthanakvasi",
-    description: "Non-idol worshipping",
-    icon: "🙏",
-  },
-  {
-    id: "shwetambar-murtipujak",
-    title: "Shwetambar - Murtipujak",
-    description: "Idol worshipping",
-    icon: "🛕",
-  },
-  {
-    id: "shwetambar-terapanthi",
-    title: "Shwetambar - Terapanthi",
-    description: "Reform movement",
-    icon: "✨",
-  },
+  { id: "digambar", title: "Digambar", description: "Sky-clad tradition", icon: "🕉️" },
+  { id: "shwetambar-sthanakvasi", title: "Shwetambar - Sthanakvasi", description: "Non-idol worshipping", icon: "🙏" },
+  { id: "shwetambar-murtipujak", title: "Shwetambar - Murtipujak", description: "Idol worshipping", icon: "🛕" },
+  { id: "shwetambar-terapanthi", title: "Shwetambar - Terapanthi", description: "Reform movement", icon: "✨" },
 ];
 
 const quizQuestions = [
@@ -72,7 +57,7 @@ const quizQuestions = [
   },
 ];
 
-const prompts = [
+const defaultPrompts = [
   { id: "tirth", prompt: "My favorite Tirth is...", answer: "" },
   { id: "sundays", prompt: "On Sundays, I usually...", answer: "" },
   { id: "values", prompt: "A value I hold dear is...", answer: "" },
@@ -83,7 +68,13 @@ type FieldErrors = Partial<Record<keyof BasicInfoFormData, string>>;
 
 const OnboardingPage = () => {
   const navigate = useNavigate();
+  const { user, profile, refreshProfile } = useAuth();
+  const { toast } = useToast();
+  const { uploadPhoto, uploading } = usePhotoUpload();
+  
   const [currentStep, setCurrentStep] = useState(1);
+  const [isSaving, setIsSaving] = useState(false);
+  
   const [basicInfo, setBasicInfo] = useState({
     firstName: "",
     lastName: "",
@@ -99,6 +90,46 @@ const OnboardingPage = () => {
   const [promptAnswers, setPromptAnswers] = useState<Record<string, string>>({});
   const [editingPrompt, setEditingPrompt] = useState<string | null>(null);
   const [tempPromptAnswer, setTempPromptAnswer] = useState("");
+  
+  // Photo state
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [mainPhotoIndex, setMainPhotoIndex] = useState(0);
+  
+  // Preferences state
+  const [preferences, setPreferences] = useState({
+    minAge: 21,
+    maxAge: 35,
+    preferredGender: "",
+    preferredLocations: [] as string[],
+    preferredSects: [] as string[],
+    preferredDietary: [] as string[],
+    excludeGotra: true,
+  });
+
+  // Check if user needs onboarding
+  useEffect(() => {
+    if (profile?.onboarding_completed) {
+      navigate("/discover");
+    }
+  }, [profile, navigate]);
+
+  // Pre-fill from existing profile
+  useEffect(() => {
+    if (profile) {
+      const nameParts = profile.name?.split(" ") || ["", ""];
+      setBasicInfo({
+        firstName: nameParts[0] || "",
+        lastName: nameParts.slice(1).join(" ") || "",
+        gender: profile.gender || "",
+        birthDate: profile.date_of_birth || "",
+        location: profile.location || "",
+        occupation: profile.occupation || "",
+      });
+      if (profile.photos?.length) {
+        setPhotos(profile.photos);
+      }
+    }
+  }, [profile]);
 
   const validateBasicInfo = (): boolean => {
     try {
@@ -118,43 +149,28 @@ const OnboardingPage = () => {
     }
   };
 
-  const validateField = (field: keyof BasicInfoFormData, value: string) => {
-    try {
-      const fieldSchema = basicInfoSchema.shape[field];
-      fieldSchema.parse(value);
-      setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        setFieldErrors((prev) => ({ ...prev, [field]: error.errors[0].message }));
-      }
-    }
-  };
-
   const handleInputChange = (field: keyof BasicInfoFormData, value: string) => {
     setBasicInfo({ ...basicInfo, [field]: value });
-    // Clear error when user starts typing
     if (fieldErrors[field]) {
       setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
 
-  const handleInputBlur = (field: keyof BasicInfoFormData) => {
-    if (basicInfo[field]) {
-      validateField(field, basicInfo[field]);
-    }
-  };
-
-  const handleNext = () => {
-    if (currentStep === 2) {
-      if (!validateBasicInfo()) {
-        return;
-      }
+  const handleNext = async () => {
+    if (currentStep === 2 && !validateBasicInfo()) return;
+    if (currentStep === 6 && photos.length === 0) {
+      toast({
+        title: "Add at least one photo",
+        description: "Please upload at least one photo to continue.",
+        variant: "destructive",
+      });
+      return;
     }
     
     if (currentStep < TOTAL_STEPS) {
       setCurrentStep(currentStep + 1);
     } else {
-      navigate("/discover");
+      await saveOnboarding();
     }
   };
 
@@ -186,7 +202,82 @@ const OnboardingPage = () => {
     if (selectedSect) score += 20;
     score += Object.keys(quizAnswers).length * 10;
     score += Object.values(promptAnswers).filter((a) => a).length * 10;
+    if (photos.length >= 3) score += 20;
     return Math.min(score, 100);
+  };
+
+  const handlePhotoUpload = async (file: Blob): Promise<string | null> => {
+    return await uploadPhoto(file, 'profile.jpg');
+  };
+
+  const saveOnboarding = async () => {
+    if (!user) return;
+    
+    setIsSaving(true);
+    try {
+      // Prepare prompts data
+      const promptsData = defaultPrompts.map(p => ({
+        question: p.prompt,
+        answer: promptAnswers[p.id] || ""
+      })).filter(p => p.answer);
+
+      // Update profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          name: `${basicInfo.firstName} ${basicInfo.lastName}`.trim(),
+          gender: basicInfo.gender,
+          date_of_birth: basicInfo.birthDate,
+          location: basicInfo.location,
+          occupation: basicInfo.occupation,
+          sect: selectedSect,
+          dietary_preference: quizAnswers[1] || null,
+          chauvihar_level: quizAnswers[0] || null,
+          temple_frequency: quizAnswers[2] || null,
+          jain_rating: calculateRating(),
+          photos,
+          main_photo_index: mainPhotoIndex,
+          prompts: promptsData,
+          onboarding_completed: true,
+        })
+        .eq('user_id', user.id);
+
+      if (profileError) throw profileError;
+
+      // Save preferences
+      const { error: prefError } = await supabase
+        .from('preferences')
+        .upsert({
+          user_id: user.id,
+          min_age: preferences.minAge,
+          max_age: preferences.maxAge,
+          preferred_gender: preferences.preferredGender || (basicInfo.gender === 'male' ? 'female' : 'male'),
+          preferred_locations: preferences.preferredLocations,
+          preferred_sects: preferences.preferredSects,
+          preferred_dietary: preferences.preferredDietary,
+          exclude_gotra: preferences.excludeGotra,
+        });
+
+      if (prefError) throw prefError;
+
+      await refreshProfile();
+      
+      toast({
+        title: "Profile complete! 🎉",
+        description: "Let's find your perfect match.",
+      });
+      
+      navigate("/discover");
+    } catch (error) {
+      console.error('Error saving onboarding:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save your profile. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const stepInfo = [
@@ -195,6 +286,8 @@ const OnboardingPage = () => {
     { title: "Sect", icon: Check },
     { title: "Quiz", icon: Sparkles },
     { title: "Prompts", icon: User },
+    { title: "Photos", icon: Camera },
+    { title: "Preferences", icon: Sliders },
     { title: "Complete", icon: Check },
   ];
 
@@ -233,43 +326,28 @@ const OnboardingPage = () => {
             </div>
 
             <div className="mx-auto flex h-32 w-32 items-center justify-center rounded-full bg-primary/10">
-              <motion.div
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ repeat: Infinity, duration: 2 }}
-              >
+              <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 2 }}>
                 <Sparkles className="h-16 w-16 text-primary" />
               </motion.div>
             </div>
 
             <div className="rounded-2xl border border-border bg-card p-6">
-              <p className="mb-4 text-center text-sm text-muted-foreground">
-                This will take about 5 minutes
-              </p>
+              <p className="mb-4 text-center text-sm text-muted-foreground">This will take about 5 minutes</p>
               <ul className="space-y-3">
-                <li className="flex items-center gap-3 rounded-xl bg-muted/50 p-3 text-sm">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                    <User className="h-4 w-4 text-primary" />
-                  </span>
-                  Tell us about yourself
-                </li>
-                <li className="flex items-center gap-3 rounded-xl bg-muted/50 p-3 text-sm">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                    <Check className="h-4 w-4 text-primary" />
-                  </span>
-                  Select your Jain sect
-                </li>
-                <li className="flex items-center gap-3 rounded-xl bg-muted/50 p-3 text-sm">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                    <Sparkles className="h-4 w-4 text-primary" />
-                  </span>
-                  Complete the Jain Rating quiz
-                </li>
-                <li className="flex items-center gap-3 rounded-xl bg-muted/50 p-3 text-sm">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                    <User className="h-4 w-4 text-primary" />
-                  </span>
-                  Add your personal prompts
-                </li>
+                {[
+                  { icon: User, text: "Tell us about yourself" },
+                  { icon: Check, text: "Select your Jain sect" },
+                  { icon: Sparkles, text: "Complete the Jain Rating quiz" },
+                  { icon: Camera, text: "Upload your photos" },
+                  { icon: Sliders, text: "Set your preferences" },
+                ].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 rounded-xl bg-muted/50 p-3 text-sm">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                      <item.icon className="h-4 w-4 text-primary" />
+                    </span>
+                    {item.text}
+                  </li>
+                ))}
               </ul>
             </div>
           </motion.div>
@@ -277,20 +355,10 @@ const OnboardingPage = () => {
 
       case 2:
         return (
-          <motion.div
-            key="step2"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-6"
-          >
+          <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
             <div className="text-center">
-              <h2 className="font-serif text-3xl font-light text-foreground md:text-4xl">
-                Basic Information
-              </h2>
-              <p className="mt-3 text-muted-foreground">
-                Tell us about yourself
-              </p>
+              <h2 className="font-serif text-3xl font-light text-foreground md:text-4xl">Basic Information</h2>
+              <p className="mt-3 text-muted-foreground">Tell us about yourself</p>
             </div>
 
             <div className="rounded-2xl border border-border bg-card p-6">
@@ -306,8 +374,7 @@ const OnboardingPage = () => {
                       placeholder="Enter first name"
                       value={basicInfo.firstName}
                       onChange={(e) => handleInputChange("firstName", e.target.value)}
-                      onBlur={() => handleInputBlur("firstName")}
-                      className={`rounded-xl ${fieldErrors.firstName ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                      className={`rounded-xl ${fieldErrors.firstName ? "border-destructive" : ""}`}
                     />
                     {renderFieldError("firstName")}
                   </div>
@@ -318,8 +385,7 @@ const OnboardingPage = () => {
                       placeholder="Enter last name"
                       value={basicInfo.lastName}
                       onChange={(e) => handleInputChange("lastName", e.target.value)}
-                      onBlur={() => handleInputBlur("lastName")}
-                      className={`rounded-xl ${fieldErrors.lastName ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                      className={`rounded-xl ${fieldErrors.lastName ? "border-destructive" : ""}`}
                     />
                     {renderFieldError("lastName")}
                   </div>
@@ -330,10 +396,7 @@ const OnboardingPage = () => {
                     <User className="h-4 w-4 text-primary" />
                     Gender
                   </Label>
-                  <Select
-                    value={basicInfo.gender}
-                    onValueChange={(value) => handleInputChange("gender", value)}
-                  >
+                  <Select value={basicInfo.gender} onValueChange={(value) => handleInputChange("gender", value)}>
                     <SelectTrigger className={`rounded-xl ${fieldErrors.gender ? "border-destructive" : ""}`}>
                       <SelectValue placeholder="Select gender" />
                     </SelectTrigger>
@@ -355,8 +418,7 @@ const OnboardingPage = () => {
                     type="date"
                     value={basicInfo.birthDate}
                     onChange={(e) => handleInputChange("birthDate", e.target.value)}
-                    onBlur={() => handleInputBlur("birthDate")}
-                    className={`rounded-xl ${fieldErrors.birthDate ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                    className={`rounded-xl ${fieldErrors.birthDate ? "border-destructive" : ""}`}
                   />
                   {renderFieldError("birthDate")}
                 </div>
@@ -371,8 +433,7 @@ const OnboardingPage = () => {
                     placeholder="e.g., Mumbai, Maharashtra"
                     value={basicInfo.location}
                     onChange={(e) => handleInputChange("location", e.target.value)}
-                    onBlur={() => handleInputBlur("location")}
-                    className={`rounded-xl ${fieldErrors.location ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                    className={`rounded-xl ${fieldErrors.location ? "border-destructive" : ""}`}
                   />
                   {renderFieldError("location")}
                 </div>
@@ -387,8 +448,7 @@ const OnboardingPage = () => {
                     placeholder="e.g., Software Engineer"
                     value={basicInfo.occupation}
                     onChange={(e) => handleInputChange("occupation", e.target.value)}
-                    onBlur={() => handleInputBlur("occupation")}
-                    className={`rounded-xl ${fieldErrors.occupation ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                    className={`rounded-xl ${fieldErrors.occupation ? "border-destructive" : ""}`}
                   />
                   {renderFieldError("occupation")}
                 </div>
@@ -399,20 +459,10 @@ const OnboardingPage = () => {
 
       case 3:
         return (
-          <motion.div
-            key="step3"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-6"
-          >
+          <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
             <div className="text-center">
-              <h2 className="font-serif text-3xl font-light text-foreground md:text-4xl">
-                Select your Sect
-              </h2>
-              <p className="mt-3 text-muted-foreground">
-                Choose the tradition you follow
-              </p>
+              <h2 className="font-serif text-3xl font-light text-foreground md:text-4xl">Select your Sect</h2>
+              <p className="mt-3 text-muted-foreground">Choose the tradition you follow</p>
             </div>
 
             <div className="space-y-3">
@@ -432,32 +482,20 @@ const OnboardingPage = () => {
 
       case 4:
         return (
-          <motion.div
-            key="step4"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-6"
-          >
+          <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
             <div className="text-center">
               <div className="mb-2 flex items-center justify-center gap-2">
                 <Sparkles className="h-5 w-5 text-primary" />
-                <h2 className="font-serif text-3xl font-light text-foreground md:text-4xl">
-                  Jain Rating Quiz
-                </h2>
+                <h2 className="font-serif text-3xl font-light text-foreground md:text-4xl">Jain Rating Quiz</h2>
               </div>
-              <p className="text-muted-foreground">
-                Question {currentQuizIndex + 1} of {quizQuestions.length}
-              </p>
+              <p className="text-muted-foreground">Question {currentQuizIndex + 1} of {quizQuestions.length}</p>
             </div>
 
             <div className="h-2 overflow-hidden rounded-full bg-muted">
               <motion.div
                 className="h-full rounded-full bg-primary"
                 initial={{ width: 0 }}
-                animate={{
-                  width: `${((currentQuizIndex + 1) / quizQuestions.length) * 100}%`,
-                }}
+                animate={{ width: `${((currentQuizIndex + 1) / quizQuestions.length) * 100}%` }}
               />
             </div>
 
@@ -471,149 +509,115 @@ const OnboardingPage = () => {
                   onSelect={handleQuizAnswer}
                 />
               </AnimatePresence>
+            </div>
 
-              {currentQuizIndex > 0 && (
+            <div className="flex justify-center gap-2">
+              {quizQuestions.map((_, idx) => (
                 <button
-                  onClick={() => setCurrentQuizIndex(currentQuizIndex - 1)}
-                  className="mt-4 text-sm font-medium text-primary"
-                >
-                  ← Previous question
-                </button>
-              )}
+                  key={idx}
+                  onClick={() => setCurrentQuizIndex(idx)}
+                  className={`h-2 w-8 rounded-full transition-colors ${idx === currentQuizIndex ? "bg-primary" : idx < currentQuizIndex && quizAnswers[idx] ? "bg-primary/50" : "bg-muted"}`}
+                />
+              ))}
             </div>
           </motion.div>
         );
 
       case 5:
         return (
-          <motion.div
-            key="step5"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-6"
-          >
+          <motion.div key="step5" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
             <div className="text-center">
-              <h2 className="font-serif text-3xl font-light text-foreground md:text-4xl">
-                Your Prompts
-              </h2>
-              <p className="mt-3 text-muted-foreground">
-                Let others know who you are
-              </p>
+              <h2 className="font-serif text-3xl font-light text-foreground md:text-4xl">Your Vibe</h2>
+              <p className="mt-3 text-muted-foreground">Answer prompts to show your personality</p>
             </div>
 
-            {editingPrompt ? (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="rounded-2xl border border-border bg-card p-6"
-              >
-                <p className="mb-4 text-sm font-medium text-foreground">
-                  {prompts.find((p) => p.id === editingPrompt)?.prompt}
+            <div className="space-y-3">
+              {defaultPrompts.map((prompt) => (
+                <PromptCard
+                  key={prompt.id}
+                  prompt={prompt.prompt}
+                  answer={promptAnswers[prompt.id] || ""}
+                  onEdit={() => {
+                    setEditingPrompt(prompt.id);
+                    setTempPromptAnswer(promptAnswers[prompt.id] || "");
+                  }}
+                />
+              ))}
+            </div>
+
+            {editingPrompt && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-2xl border border-border bg-card p-4">
+                <p className="mb-2 text-sm text-muted-foreground">
+                  {defaultPrompts.find(p => p.id === editingPrompt)?.prompt}
                 </p>
                 <textarea
                   value={tempPromptAnswer}
                   onChange={(e) => setTempPromptAnswer(e.target.value)}
                   placeholder="Type your answer..."
-                  className="min-h-24 w-full resize-none rounded-xl border border-border bg-background p-4 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  autoFocus
+                  className="w-full resize-none rounded-xl border border-border bg-background p-3 text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none"
+                  rows={3}
                 />
-                <div className="mt-4 flex gap-3">
-                  <button
-                    onClick={() => setEditingPrompt(null)}
-                    className="flex-1 rounded-full border border-border py-3 font-medium transition-colors hover:bg-muted"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handlePromptSave}
-                    className="flex-1 rounded-full bg-foreground py-3 font-medium text-background transition-colors hover:opacity-90"
-                  >
-                    Save
-                  </button>
+                <div className="mt-3 flex gap-2">
+                  <button onClick={() => setEditingPrompt(null)} className="flex-1 rounded-full border border-border py-2 text-sm hover:bg-muted">Cancel</button>
+                  <button onClick={handlePromptSave} className="flex-1 rounded-full bg-foreground py-2 text-sm text-background">Save</button>
                 </div>
               </motion.div>
-            ) : (
-              <div className="space-y-3">
-                {prompts.map((prompt) => (
-                  <PromptCard
-                    key={prompt.id}
-                    prompt={prompt.prompt}
-                    answer={promptAnswers[prompt.id]}
-                    onEdit={() => {
-                      setEditingPrompt(prompt.id);
-                      setTempPromptAnswer(promptAnswers[prompt.id] || "");
-                    }}
-                  />
-                ))}
-              </div>
             )}
           </motion.div>
         );
 
       case 6:
         return (
-          <motion.div
+          <PhotoUploadStep
             key="step6"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-8 text-center"
-          >
-            <motion.div
-              className="mx-auto flex h-32 w-32 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 200 }}
-            >
-              <span className="text-5xl font-bold text-white">
-                {calculateRating()}%
-              </span>
-            </motion.div>
+            photos={photos}
+            mainPhotoIndex={mainPhotoIndex}
+            onPhotosChange={setPhotos}
+            onMainPhotoChange={setMainPhotoIndex}
+            maxPhotos={6}
+            uploading={uploading}
+            onUploadPhoto={handlePhotoUpload}
+          />
+        );
 
-            <div>
-              <h2 className="font-serif text-3xl font-light text-foreground md:text-4xl">
-                Your Jain Rating
-              </h2>
-              <p className="mt-3 text-muted-foreground">
-                Based on your spiritual practices and values
-              </p>
+      case 7:
+        return (
+          <PreferencesStep
+            key="step7"
+            preferences={preferences}
+            onPreferencesChange={setPreferences}
+          />
+        );
+
+      case 8:
+        return (
+          <motion.div key="step8" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
+            <div className="text-center">
+              <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 2 }} className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-primary/10">
+                <Check className="h-12 w-12 text-primary" />
+              </motion.div>
+              <h2 className="font-serif text-3xl font-light text-foreground md:text-4xl">You're all set!</h2>
+              <p className="mt-3 text-muted-foreground">Your profile is ready. Let's find your match.</p>
             </div>
 
-            <div className="rounded-2xl border border-border bg-card p-6 text-left">
-              <h3 className="mb-4 font-medium">Profile Summary</h3>
-              <ul className="space-y-3">
-                <li className="flex items-center justify-between rounded-xl bg-muted/50 p-3">
-                  <span className="text-muted-foreground">Name</span>
-                  <span className="font-medium text-foreground">
-                    {basicInfo.firstName} {basicInfo.lastName}
-                  </span>
-                </li>
-                <li className="flex items-center justify-between rounded-xl bg-muted/50 p-3">
-                  <span className="text-muted-foreground">Location</span>
-                  <span className="font-medium text-foreground">
-                    {basicInfo.location || "Not specified"}
-                  </span>
-                </li>
-                <li className="flex items-center justify-between rounded-xl bg-muted/50 p-3">
-                  <span className="text-muted-foreground">Sect</span>
-                  <span className="font-medium text-foreground">
-                    {sects.find((s) => s.id === selectedSect)?.title || "Not selected"}
-                  </span>
-                </li>
-                <li className="flex items-center justify-between rounded-xl bg-muted/50 p-3">
-                  <span className="text-muted-foreground">Quiz</span>
-                  <span className="font-medium text-foreground">
-                    {Object.keys(quizAnswers).length}/{quizQuestions.length} completed
-                  </span>
-                </li>
-                <li className="flex items-center justify-between rounded-xl bg-muted/50 p-3">
-                  <span className="text-muted-foreground">Prompts</span>
-                  <span className="font-medium text-foreground">
-                    {Object.values(promptAnswers).filter((a) => a).length}/{prompts.length} answered
-                  </span>
-                </li>
-              </ul>
+            <div className="rounded-2xl border border-border bg-card p-6 text-center">
+              <div className="mb-4 flex items-center justify-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                <span className="font-medium">Your Jain Rating</span>
+              </div>
+              <div className="text-5xl font-light text-primary">{calculateRating()}%</div>
+              <p className="mt-2 text-sm text-muted-foreground">Based on your profile completeness</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 text-center">
+              <div className="rounded-xl bg-muted p-4">
+                <div className="text-2xl font-light">{photos.length}</div>
+                <div className="text-sm text-muted-foreground">Photos</div>
+              </div>
+              <div className="rounded-xl bg-muted p-4">
+                <div className="text-2xl font-light">{Object.keys(promptAnswers).filter(k => promptAnswers[k]).length}</div>
+                <div className="text-sm text-muted-foreground">Prompts</div>
+              </div>
             </div>
           </motion.div>
         );
@@ -623,54 +627,18 @@ const OnboardingPage = () => {
     }
   };
 
-  const canProceed = () => {
-    switch (currentStep) {
-      case 1:
-        return true;
-      case 2:
-        return basicInfo.firstName && basicInfo.lastName && basicInfo.gender && basicInfo.birthDate && basicInfo.location && basicInfo.occupation;
-      case 3:
-        return selectedSect !== null;
-      case 4:
-        return currentQuizIndex === quizQuestions.length - 1 && 
-               quizAnswers[currentQuizIndex] !== undefined;
-      case 5:
-        return !editingPrompt;
-      case 6:
-        return true;
-      default:
-        return false;
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <div className="mx-auto max-w-2xl px-6 pb-24 pt-28 md:px-12 md:pt-32">
-        {/* Progress Steps */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-10"
-        >
-          <div className="mb-4 flex items-center justify-between">
-            <span className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
-              Step {currentStep} of {TOTAL_STEPS}
-            </span>
-            {currentStep > 1 && (
-              <button
-                onClick={handleBack}
-                className="flex items-center gap-1 text-sm font-medium text-primary transition-colors hover:text-primary/80"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back
-              </button>
-            )}
+      <div className="mx-auto max-w-xl px-6 pb-24 pt-28 md:pt-32">
+        {/* Progress */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>Step {currentStep} of {TOTAL_STEPS}</span>
+            <span>{stepInfo[currentStep - 1].title}</span>
           </div>
-          
-          {/* Progress Bar */}
-          <div className="h-2 overflow-hidden rounded-full bg-muted">
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
             <motion.div
               className="h-full rounded-full bg-primary"
               initial={{ width: 0 }}
@@ -678,61 +646,39 @@ const OnboardingPage = () => {
               transition={{ duration: 0.3 }}
             />
           </div>
+        </div>
 
-          {/* Step Indicators */}
-          <div className="mt-4 hidden gap-2 sm:flex">
-            {stepInfo.map((step, index) => (
-              <div
-                key={index}
-                className={`flex flex-1 flex-col items-center text-center ${
-                  index + 1 <= currentStep ? "text-primary" : "text-muted-foreground"
-                }`}
-              >
-                <div
-                  className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium ${
-                    index + 1 < currentStep
-                      ? "bg-primary text-primary-foreground"
-                      : index + 1 === currentStep
-                      ? "bg-primary/20 text-primary"
-                      : "bg-muted text-muted-foreground"
-                  }`}
-                >
-                  {index + 1 < currentStep ? (
-                    <Check className="h-4 w-4" />
-                  ) : (
-                    index + 1
-                  )}
-                </div>
-                <span className="mt-1 text-xs">{step.title}</span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Content */}
+        {/* Step Content */}
         <AnimatePresence mode="wait">{renderStep()}</AnimatePresence>
 
-        {/* Continue Button */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mt-10"
-        >
+        {/* Navigation */}
+        <div className="mt-8 flex gap-4">
+          {currentStep > 1 && (
+            <button onClick={handleBack} className="flex flex-1 items-center justify-center gap-2 rounded-full border border-border py-4 font-medium transition-colors hover:bg-muted">
+              <ArrowLeft className="h-5 w-5" />
+              Back
+            </button>
+          )}
           <motion.button
             onClick={handleNext}
-            disabled={!canProceed()}
-            className="flex w-full items-center justify-center gap-2 rounded-full bg-foreground py-4 font-medium text-background transition-all hover:opacity-90 disabled:opacity-50"
-            whileHover={canProceed() ? { scale: 1.01 } : {}}
-            whileTap={canProceed() ? { scale: 0.99 } : {}}
+            disabled={isSaving || (currentStep === 6 && photos.length === 0)}
+            className="flex flex-1 items-center justify-center gap-2 rounded-full bg-foreground py-4 font-medium text-background transition-all hover:opacity-90 disabled:opacity-50"
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
           >
-            <span>{currentStep === TOTAL_STEPS ? "Start Exploring" : "Continue"}</span>
-            <ArrowRight className="h-5 w-5" />
+            {isSaving ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : currentStep === TOTAL_STEPS ? (
+              <>Start Discovering</>
+            ) : (
+              <>
+                Continue
+                <ArrowRight className="h-5 w-5" />
+              </>
+            )}
           </motion.button>
-        </motion.div>
+        </div>
       </div>
-
-      <Footer />
     </div>
   );
 };
