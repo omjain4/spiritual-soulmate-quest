@@ -61,7 +61,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .maybeSingle();
 
     if (error) {
-      console.error("Error fetching profile:", error);
+      const sanitizedError = String(error?.message || error).replace(/[\r\n]/g, '');
+      console.error("Error fetching profile:", sanitizedError);
       return null;
     }
     // Parse prompts from JSON
@@ -156,7 +157,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
 
       if (profileError) {
-        console.error("Error creating profile:", profileError);
+        const sanitizedError = String(profileError?.message || profileError).replace(/[\r\n]/g, '');
+        console.error("Error creating profile:", sanitizedError);
       }
     }
   };

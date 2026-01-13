@@ -49,13 +49,14 @@ const VideoCallModal = ({
 
   useEffect(() => {
     if (remoteVideoRef.current && remoteStream && !isAudioOnly) {
-      console.log("Setting remote video stream", remoteStream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled })));
+      console.log("Setting remote video stream", remoteStream.getTracks().map(t => ({ kind: String(t.kind).replace(/[\r\n]/g, ''), enabled: t.enabled })));
       remoteVideoRef.current.srcObject = remoteStream;
       remoteVideoRef.current.muted = false;
       remoteVideoRef.current.volume = 1.0;
       
       remoteVideoRef.current.play().catch(err => {
-        console.error("Error playing remote stream:", err);
+        const sanitizedError = String(err?.message || err).replace(/[\r\n]/g, '');
+        console.error("Error playing remote stream:", sanitizedError);
         const playOnInteraction = () => {
           remoteVideoRef.current?.play();
           document.removeEventListener('click', playOnInteraction);
@@ -65,12 +66,13 @@ const VideoCallModal = ({
     }
     
     if (remoteAudioRef.current && remoteStream && isAudioOnly) {
-      console.log("Setting remote audio stream", remoteStream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled })));
+      console.log("Setting remote audio stream", remoteStream.getTracks().map(t => ({ kind: String(t.kind).replace(/[\r\n]/g, ''), enabled: t.enabled })));
       remoteAudioRef.current.srcObject = remoteStream;
       remoteAudioRef.current.volume = 1.0;
       
       remoteAudioRef.current.play().catch(err => {
-        console.error("Error playing remote audio:", err);
+        const sanitizedError = String(err?.message || err).replace(/[\r\n]/g, '');
+        console.error("Error playing remote audio:", sanitizedError);
         const playOnInteraction = () => {
           remoteAudioRef.current?.play();
           document.removeEventListener('click', playOnInteraction);

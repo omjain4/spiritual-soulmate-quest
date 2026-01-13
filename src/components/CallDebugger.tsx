@@ -37,10 +37,14 @@ const CallDebugger = () => {
           table: "video_calls",
         },
         (payload: VideoCallPayload) => {
-          console.log("Call event received:", payload);
+          const sanitizedPayload = {
+            eventType: String(payload.eventType || 'unknown').replace(/[\r\n]/g, ''),
+            status: String(payload.new?.status || payload.old?.status || 'unknown').replace(/[\r\n]/g, ''),
+          };
+          console.log("Call event received:", sanitizedPayload);
           const newEvent: CallEvent = {
             id: Date.now().toString(),
-            event: `${payload.eventType} - ${payload.new?.status || payload.old?.status || 'unknown'}`,
+            event: `${sanitizedPayload.eventType} - ${sanitizedPayload.status}`,
             timestamp: new Date().toLocaleTimeString(),
             data: payload,
           };
@@ -48,7 +52,8 @@ const CallDebugger = () => {
         }
       )
       .subscribe((status) => {
-        console.log("Subscription status:", status);
+        const sanitizedStatus = String(status).replace(/[\r\n]/g, '');
+        console.log("Subscription status:", sanitizedStatus);
       });
 
     return () => {

@@ -209,7 +209,10 @@ const FamilyModePage = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
               >
-                <PrivacyControls onSave={(settings) => console.log("Saved:", settings)} />
+                <PrivacyControls onSave={(settings) => {
+                  // Handle settings save securely without logging user input
+                  console.log("Privacy settings saved successfully");
+                }} />
               </motion.div>
             )}
           </div>

@@ -65,24 +65,50 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     return null;
   }
 
-  return (
-    <style
-      dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
-          .map(
-            ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
+  const sanitizeCSS = (value: string): string => {
+    return value.replace(/[<>"'&]/g, '').replace(/[;:()]/g, '');
+  };
+
+  const sanitizeId = (value: string): string => {
+    return value.replace(/[^a-zA-Z0-9-_]/g, '');
+  };
+
+  const sanitizeColor = (value: string): string => {
+    const stringValue = String(value);
+    // Only allow hex colors, rgb/rgba, and named colors
+    if (/^(#[0-9a-f]{3,6}|rgba?\([^)]*\)|[a-z]+)$/i.test(stringValue)) {
+      return stringValue;
+    }
+    return '';
+  };
+
+  const cssContent = Object.entries(THEMES)
+    .map(
+      ([theme, prefix]) => {
+        const sanitizedPrefix = sanitizeId(String(prefix));
+        const sanitizedId = sanitizeId(id);
+        return `
+${sanitizedPrefix} [data-chart=${sanitizedId}] {
 ${colorConfig
   .map(([key, itemConfig]) => {
     const color = itemConfig.theme?.[theme as keyof typeof itemConfig.theme] || itemConfig.color;
-    return color ? `  --color-${key}: ${color};` : null;
+    const sanitizedColor = color ? sanitizeColor(String(color)) : '';
+    return sanitizedColor ? `  --color-${sanitizeId(key)}: ${sanitizedColor};` : null;
   })
   .join("\n")}
 }
-`,
-          )
-          .join("\n"),
+`;
+      }
+    )
+    .join("\n");
+
+  return (
+    <style
+      // eslint-disable-next-line react/no-danger
+      dangerouslySetInnerHTML={{
+        __html: cssContent,
       }}
+      suppressHydrationWarning
     />
   );
 };

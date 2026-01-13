@@ -104,7 +104,8 @@ export const useChat = () => {
       .order("created_at", { ascending: true });
 
     if (error) {
-      console.error("Error fetching messages:", error);
+      const sanitizedError = String(error?.message || error).replace(/[\r\n]/g, '');
+      console.error("Error fetching messages:", sanitizedError);
       return;
     }
 
@@ -143,7 +144,8 @@ export const useChat = () => {
     });
 
     if (error) {
-      console.error("Error sending message:", error);
+      const sanitizedError = String(error?.message || error).replace(/[\r\n]/g, '');
+      console.error("Error sending message:", sanitizedError);
       return false;
     }
 
@@ -167,7 +169,8 @@ export const useChat = () => {
       .upload(fileName, file);
 
     if (uploadError) {
-      console.error("Error uploading media:", uploadError);
+      const sanitizedError = String(uploadError?.message || uploadError).replace(/[\r\n]/g, '');
+      console.error("Error uploading media:", sanitizedError);
       return null;
     }
 
@@ -177,7 +180,8 @@ export const useChat = () => {
       .createSignedUrl(fileName, 3600);
 
     if (error) {
-      console.error("Error creating signed URL:", error);
+      const sanitizedError = String(error?.message || error).replace(/[\r\n]/g, '');
+      console.error("Error creating signed URL:", sanitizedError);
       return null;
     }
 
@@ -200,7 +204,8 @@ export const useChat = () => {
       });
 
     if (error) {
-      console.error("Error setting typing status:", error);
+      const sanitizedError = String(error?.message || error).replace(/[\r\n]/g, '');
+      console.error("Error setting typing status:", sanitizedError);
     }
   }, [user]);
 
@@ -230,7 +235,8 @@ export const useChat = () => {
       .single();
 
     if (error) {
-      console.error("Error creating conversation:", error);
+      const sanitizedError = String(error?.message || error).replace(/[\r\n]/g, '');
+      console.error("Error creating conversation:", sanitizedError);
       return null;
     }
 

@@ -137,7 +137,8 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
         duration_seconds: durationSeconds,
       });
     } catch (error) {
-      console.error("Error adding to call history:", error);
+      const sanitizedError = String(error?.message || error).replace(/[\r\n]/g, '');
+      console.error("Error adding to call history:", sanitizedError);
     }
   }, []);
 
@@ -169,7 +170,8 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
         });
       }
     } catch (error) {
-      console.error("Error creating missed call notification:", error);
+      const sanitizedError = String(error?.message || error).replace(/[\r\n]/g, '');
+      console.error("Error creating missed call notification:", sanitizedError);
     }
   }, []);
 
@@ -204,7 +206,14 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
   const startLocalStream = useCallback(
     async (audioOnly: boolean) => {
       try {
-        console.log("Requesting media access:", { audioOnly });
+        const sanitizedAudioOnly = String(audioOnly).replace(/[\r\n]/g, '');
+        console.log("Requesting media access:", { audioOnly: sanitizedAudioOnly });
+        
+        // Request notification permission if not already granted
+        if ("Notification" in window && Notification.permission === "default") {
+          await Notification.requestPermission();
+        }
+        
         const stream = await navigator.mediaDevices.getUserMedia({
           video: audioOnly ? false : { width: 1280, height: 720 },
           audio: {
@@ -213,13 +222,14 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
             autoGainControl: true,
           },
         });
-        console.log("Media stream obtained:", stream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled })));
+        console.log("Media stream obtained with tracks");
         setLocalStream(stream);
         setIsAudioOnly(audioOnly);
         setIsVideoOff(audioOnly);
         return stream;
       } catch (error) {
-        console.error("Error accessing media devices:", error);
+        const sanitizedError = String(error?.message || error).replace(/[\r\n]/g, '');
+        console.error("Error accessing media devices:", sanitizedError);
         toast({
           title: audioOnly ? "Microphone Error" : "Camera/Microphone Error",
           description: `Unable to access ${audioOnly ? "microphone" : "camera or microphone"}. Please check permissions.`,
@@ -263,21 +273,22 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
       const pc = new RTCPeerConnection(ICE_SERVERS);
 
       stream.getTracks().forEach((track) => {
-        console.log("Adding local track:", track.kind, track.enabled);
+        console.log("Adding local track");
         pc.addTrack(track, stream);
       });
 
       pc.ontrack = (event) => {
-        console.log("Received remote track:", event.track.kind);
+        console.log("Received remote track");
         const [s] = event.streams;
         if (s) {
-          console.log("Setting remote stream with tracks:", s.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled })));
+          const trackCount = String(s.getTracks().length).replace(/[\r\n]/g, '');
+          console.log("Setting remote stream with tracks count:", trackCount);
           setRemoteStream(s);
           
           // Ensure audio tracks are enabled
           s.getAudioTracks().forEach(track => {
             track.enabled = true;
-            console.log("Audio track enabled:", track.id);
+            console.log("Audio track enabled");
           });
         }
       };
@@ -286,7 +297,7 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
         const callId = callIdRef.current;
         if (!event.candidate || !callId) return;
 
-        console.log("Generated ICE candidate:", event.candidate.candidate);
+        console.log("Generated ICE candidate");
 
         const { data: callData, error: readError } = await supabase
           .from("video_calls")
@@ -354,7 +365,8 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
           .single();
 
         if (error) {
-          console.error("Error creating call:", error);
+          const sanitizedError = String(error?.message || error).replace(/[\r\n]/g, '');
+          console.error("Error creating call:", sanitizedError);
           cleanup();
           setCallState("idle");
           toast({
@@ -372,7 +384,7 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
           return;
         }
 
-        console.log("Call created successfully:", call);
+        console.log("Call created successfully");
         const typedCall = coerceCall(call);
         callIdRef.current = typedCall.id;
         setCurrentCall(typedCall);
@@ -388,7 +400,8 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
           .eq("id", typedCall.id);
 
         if (updateError) {
-          console.error("Error updating call with offer:", updateError);
+          const sanitizedError = String(updateError?.message || updateError).replace(/[\r\n]/g, '');
+          console.error("Error updating call with offer:", sanitizedError);
         }
 
         ringTimeoutRef.current = setTimeout(async () => {
@@ -411,7 +424,8 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
           description: "Waiting for the other person to answer.",
         });
       } catch (error) {
-        console.error("Unexpected error starting call:", error);
+        const sanitizedError = String(error?.message || error).replace(/[\r\n]/g, '');
+        console.error("Unexpected error starting call:", sanitizedError);
         cleanup();
         setCallState("idle");
         toast({
@@ -476,7 +490,8 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
         try {
           await pc.addIceCandidate(new RTCIceCandidate(candidate));
         } catch (e) {
-          console.error("Error adding ICE candidate:", e);
+          const sanitizedError = String(e?.message || e).replace(/[\r\n]/g, '');
+          console.error("Error adding ICE candidate:", sanitizedError);
         }
       }
       handledIceCountRef.current = call.ice_candidates.length;
@@ -530,7 +545,8 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
           
           // Only process if this is a new incoming call and we're the callee
           if (call.status === "ringing" && call.callee_id === user.id && call.caller_id !== user.id) {
-            console.log("Incoming call received:", payload.new);
+            const sanitizedCallId = String(call.id).replace(/[\r\n]/g, '');
+            console.log("Incoming call received:", sanitizedCallId);
             callIdRef.current = call.id;
             setCurrentCall(call);
             setCallState("ringing");
@@ -565,10 +581,30 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
             // Show browser notification
             if ("Notification" in window) {
               if (Notification.permission === "granted") {
+                const sanitizeName = (text: string): string => {
+                  return text.replace(/[<>"'&\r\n]/g, (char) => {
+                    const entities: Record<string, string> = {
+                      '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;', '&': '&amp;', '\r': '', '\n': ''
+                    };
+                    return entities[char] || '';
+                  });
+                };
+                const isValidIconUrl = (url: string): boolean => {
+                  try {
+                    const parsedUrl = new URL(url, window.location.origin);
+                    return parsedUrl.origin === window.location.origin || url.startsWith('data:image/');
+                  } catch {
+                    return url.startsWith('/') || url === "/favicon.ico";
+                  }
+                };
+                const sanitizedName = sanitizeName(callerProfile?.name || "Someone");
+                const iconUrl = callerProfile?.avatar_url || "/favicon.ico";
+                const sanitizedIconUrl = isValidIconUrl(iconUrl) ? iconUrl : "/favicon.ico";
+                const sanitizedCallId = String(call.id).replace(/[\r\n]/g, '');
                 new Notification("Incoming Call", {
-                  body: `${callerProfile?.name || "Someone"} is calling you`,
-                  icon: callerProfile?.avatar_url || "/favicon.ico",
-                  tag: `incoming-call-${call.id}`,
+                  body: `${sanitizedName} is calling you`,
+                  icon: sanitizedIconUrl,
+                  tag: `incoming-call-${sanitizedCallId}`,
                   requireInteraction: true,
                 });
               } else if (Notification.permission === "default") {
@@ -625,13 +661,14 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
               
               // Add any ICE candidates that arrived
               if (call.ice_candidates && call.ice_candidates.length > handledIceCountRef.current) {
-                const newCandidates = call.ice_candidates.slice(handledIceCountRef.current);
-                console.log("Adding ICE candidates after answer:", newCandidates.length);
-                for (const c of newCandidates) {
+                const newCandidatesCount = call.ice_candidates.length - handledIceCountRef.current;
+                console.log("Adding ICE candidates after answer:", newCandidatesCount);
+                for (const c of call.ice_candidates.slice(handledIceCountRef.current)) {
                   try {
                     await pc.addIceCandidate(new RTCIceCandidate(c));
                   } catch (e) {
-                    console.error("Error adding ICE candidate:", e);
+                    const sanitizedError = String(e?.message || e).replace(/[\r\n]/g, '');
+                    console.error("Error adding ICE candidate:", sanitizedError);
                   }
                 }
                 handledIceCountRef.current = call.ice_candidates.length;
@@ -656,14 +693,15 @@ export const useVideoCall = (conversationId: string | null, otherUserId: string 
           const candidates = call.ice_candidates ?? [];
           const pc = peerConnectionRef.current;
           if (pc && pc.remoteDescription && candidates.length > handledIceCountRef.current) {
-            const next = candidates.slice(handledIceCountRef.current);
-            console.log("Processing new ICE candidates:", next.length);
-            for (const c of next) {
+            const newCandidatesCount = candidates.length - handledIceCountRef.current;
+            console.log("Processing new ICE candidates:", newCandidatesCount);
+            for (const c of candidates.slice(handledIceCountRef.current)) {
               try {
                 await pc.addIceCandidate(new RTCIceCandidate(c));
                 console.log("Added ICE candidate successfully");
               } catch (e) {
-                console.error("Error adding ICE candidate:", e);
+                const sanitizedError = String(e?.message || e).replace(/[\r\n]/g, '');
+                console.error("Error adding ICE candidate:", sanitizedError);
               }
             }
             handledIceCountRef.current = candidates.length;

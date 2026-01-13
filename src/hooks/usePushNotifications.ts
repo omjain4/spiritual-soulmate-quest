@@ -88,10 +88,23 @@ export const usePushNotifications = () => {
             }
           }
 
-          showNotification(notification.title, {
-            body: notification.description,
+          const sanitizeText = (text: string): string => {
+            return String(text).replace(/[<>"'&]/g, (char) => {
+              const entities: Record<string, string> = {
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#x27;',
+                '&': '&amp;'
+              };
+              return entities[char] || char;
+            });
+          };
+
+          showNotification(sanitizeText(notification.title), {
+            body: sanitizeText(notification.description),
             icon,
-            tag: notification.type,
+            tag: sanitizeText(notification.type),
           });
         }
       )
