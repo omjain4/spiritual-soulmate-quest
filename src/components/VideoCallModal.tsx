@@ -43,42 +43,41 @@ const VideoCallModal = ({
     if (localVideoRef.current && localStream) {
       console.log("Setting local video stream");
       localVideoRef.current.srcObject = localStream;
-      localVideoRef.current.muted = true; // Always mute local video to prevent feedback
+      localVideoRef.current.muted = true;
     }
+    return () => {
+      if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+      }
+    };
   }, [localStream]);
+
+  const handlePlaybackError = (mediaRef: React.RefObject<HTMLVideoElement | HTMLAudioElement>, mediaType: string) => {
+    return (err: Error) => {
+      const sanitizedError = String(err?.message || err).replace(/[\r\n]/g, '');
+      console.error(`Error playing remote ${mediaType}:`, sanitizedError);
+      const playOnInteraction = () => {
+        mediaRef.current?.play();
+        document.removeEventListener('click', playOnInteraction);
+      };
+      document.addEventListener('click', playOnInteraction, { once: true });
+    };
+  };
 
   useEffect(() => {
     if (remoteVideoRef.current && remoteStream && !isAudioOnly) {
-      console.log("Setting remote video stream", remoteStream.getTracks().map(t => ({ kind: String(t.kind).replace(/[\r\n]/g, ''), enabled: t.enabled })));
+      console.log("Setting remote video stream");
       remoteVideoRef.current.srcObject = remoteStream;
       remoteVideoRef.current.muted = false;
       remoteVideoRef.current.volume = 1.0;
-      
-      remoteVideoRef.current.play().catch(err => {
-        const sanitizedError = String(err?.message || err).replace(/[\r\n]/g, '');
-        console.error("Error playing remote stream:", sanitizedError);
-        const playOnInteraction = () => {
-          remoteVideoRef.current?.play();
-          document.removeEventListener('click', playOnInteraction);
-        };
-        document.addEventListener('click', playOnInteraction);
-      });
+      remoteVideoRef.current.play().catch(handlePlaybackError(remoteVideoRef, "stream"));
     }
     
     if (remoteAudioRef.current && remoteStream && isAudioOnly) {
-      console.log("Setting remote audio stream", remoteStream.getTracks().map(t => ({ kind: String(t.kind).replace(/[\r\n]/g, ''), enabled: t.enabled })));
+      console.log("Setting remote audio stream");
       remoteAudioRef.current.srcObject = remoteStream;
       remoteAudioRef.current.volume = 1.0;
-      
-      remoteAudioRef.current.play().catch(err => {
-        const sanitizedError = String(err?.message || err).replace(/[\r\n]/g, '');
-        console.error("Error playing remote audio:", sanitizedError);
-        const playOnInteraction = () => {
-          remoteAudioRef.current?.play();
-          document.removeEventListener('click', playOnInteraction);
-        };
-        document.addEventListener('click', playOnInteraction);
-      });
+      remoteAudioRef.current.play().catch(handlePlaybackError(remoteAudioRef, "audio"));
     }
   }, [remoteStream, isAudioOnly]);
 
@@ -207,8 +206,6 @@ const VideoCallModal = ({
             {/* Local video (picture-in-picture) - only show for video calls */}
             {!isAudioOnly && (
               <motion.div
-                drag
-                dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
                 className="absolute bottom-24 right-4 h-40 w-28 overflow-hidden rounded-2xl shadow-lg md:h-48 md:w-36"
               >
                 <video

@@ -84,7 +84,12 @@ export const usePushNotifications = () => {
               .maybeSingle();
 
             if (profile?.photos?.[0]) {
-              icon = profile.photos[0];
+              try {
+                const url = new URL(profile.photos[0], window.location.origin);
+                icon = url.toString();
+              } catch {
+                // If URL is invalid, keep default favicon
+              }
             }
           }
 
@@ -101,10 +106,16 @@ export const usePushNotifications = () => {
             });
           };
 
-          showNotification(sanitizeText(notification.title), {
-            body: sanitizeText(notification.description),
-            icon,
-            tag: sanitizeText(notification.type),
+          const sanitizedIcon = String(icon).replace(/[<>"'\r\n]/g, '');
+
+          const sanitizedTitle = sanitizeText(notification.title);
+          const sanitizedBody = sanitizeText(notification.description);
+          const sanitizedTag = sanitizeText(notification.type);
+
+          showNotification(sanitizedTitle, {
+            body: sanitizedBody,
+            icon: sanitizedIcon,
+            tag: sanitizedTag,
           });
         }
       )
