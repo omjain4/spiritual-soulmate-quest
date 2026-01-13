@@ -20,6 +20,7 @@ import CallsPage from "./pages/CallsPage";
 import AboutPage from "./pages/AboutPage";
 import HelpCenterPage from "./pages/HelpCenterPage";
 import HowItWorksPage from "./pages/HowItWorksPage";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +49,7 @@ const App = () => (
             <Route path="/about" element={<AboutPage />} />
             <Route path="/help" element={<HelpCenterPage />} />
             <Route path="/how-it-works" element={<HowItWorksPage />} />
+            <Route path="/admin" element={<AdminDashboard />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
