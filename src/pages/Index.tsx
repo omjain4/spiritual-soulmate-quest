@@ -1,12 +1,21 @@
 import { motion } from "framer-motion";
 import { Heart, ArrowRight, Shield, Users, Sparkles, TrendingUp, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import GlassCard from "@/components/GlassCard";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      navigate("/discover", { replace: true });
+    }
+  }, [user, navigate]);
 
   // Live stats for 1:1 tracker
   const waitingRoomStats = {
