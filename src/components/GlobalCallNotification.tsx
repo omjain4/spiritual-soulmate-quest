@@ -37,7 +37,7 @@ const GlobalCallNotification = () => {
         async (payload) => {
           const call = payload.new as any;
           
-          if (call.status === "ringing") {
+          if (call.status === "ringing" && call.callee_id === user.id && call.caller_id !== user.id) {
             // Fetch caller profile
             const { data: callerProfile } = await supabase
               .from("profiles")

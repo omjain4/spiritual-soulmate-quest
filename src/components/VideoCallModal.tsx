@@ -37,18 +37,48 @@ const VideoCallModal = ({
 }: VideoCallModalProps) => {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteAudioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
     if (localVideoRef.current && localStream) {
+      console.log("Setting local video stream");
       localVideoRef.current.srcObject = localStream;
+      localVideoRef.current.muted = true; // Always mute local video to prevent feedback
     }
   }, [localStream]);
 
   useEffect(() => {
-    if (remoteVideoRef.current && remoteStream) {
+    if (remoteVideoRef.current && remoteStream && !isAudioOnly) {
+      console.log("Setting remote video stream", remoteStream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled })));
       remoteVideoRef.current.srcObject = remoteStream;
+      remoteVideoRef.current.muted = false;
+      remoteVideoRef.current.volume = 1.0;
+      
+      remoteVideoRef.current.play().catch(err => {
+        console.error("Error playing remote stream:", err);
+        const playOnInteraction = () => {
+          remoteVideoRef.current?.play();
+          document.removeEventListener('click', playOnInteraction);
+        };
+        document.addEventListener('click', playOnInteraction);
+      });
     }
-  }, [remoteStream]);
+    
+    if (remoteAudioRef.current && remoteStream && isAudioOnly) {
+      console.log("Setting remote audio stream", remoteStream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled })));
+      remoteAudioRef.current.srcObject = remoteStream;
+      remoteAudioRef.current.volume = 1.0;
+      
+      remoteAudioRef.current.play().catch(err => {
+        console.error("Error playing remote audio:", err);
+        const playOnInteraction = () => {
+          remoteAudioRef.current?.play();
+          document.removeEventListener('click', playOnInteraction);
+        };
+        document.addEventListener('click', playOnInteraction);
+      });
+    }
+  }, [remoteStream, isAudioOnly]);
 
   if (!isOpen) return null;
 
@@ -148,6 +178,7 @@ const VideoCallModal = ({
             {/* Remote video or audio-only avatar */}
             {isAudioOnly ? (
               <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-gray-900 to-black">
+                <audio ref={remoteAudioRef} autoPlay />
                 <motion.div
                   animate={{ scale: [1, 1.05, 1] }}
                   transition={{ repeat: Infinity, duration: 2 }}
