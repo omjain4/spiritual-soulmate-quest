@@ -3,10 +3,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
   Menu, X, Heart, Search, Clock, User, 
-  MessageCircle, Shield, Users, Bell, LogOut, LogIn
+  MessageCircle, Shield, Users, Bell, LogOut, LogIn, ShieldCheck
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications, Notification } from "@/hooks/useNotifications";
+import { useAdminRole } from "@/hooks/useAdminRole";
 
 const Navbar = () => {
   const location = useLocation();
@@ -17,6 +18,7 @@ const Navbar = () => {
   const notificationRef = useRef<HTMLDivElement>(null);
   const { user, profile, isAuthenticated, logout } = useAuth();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const { hasAdminAccess } = useAdminRole();
 
   const isHomePage = location.pathname === "/";
 
@@ -153,6 +155,16 @@ const Navbar = () => {
           <div className="flex items-center gap-2">
             {isAuthenticated ? (
               <>
+                {/* Admin Dashboard Button */}
+                {hasAdminAccess && (
+                  <Link
+                    to="/admin"
+                    className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${isHomePage && !scrolled ? "bg-white/10 text-white hover:bg-white/20" : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+                    title="Admin Dashboard"
+                  >
+                    <ShieldCheck className="h-5 w-5" />
+                  </Link>
+                )}
                 {/* Family Mode Button */}
                 <Link
                   to="/family-mode"
@@ -394,6 +406,11 @@ const Navbar = () => {
                 {isAuthenticated ? (
                   <>
                     <hr className="my-3 border-border" />
+                    {hasAdminAccess && (
+                      <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-primary hover:bg-primary/10">
+                        <ShieldCheck className="h-5 w-5" /> Admin Dashboard
+                      </Link>
+                    )}
                     <Link to="/profile" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-muted">
                       <User className="h-5 w-5" /> My Profile
                     </Link>

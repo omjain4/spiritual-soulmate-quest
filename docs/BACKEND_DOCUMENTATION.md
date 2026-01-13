@@ -59,6 +59,8 @@ The backend is powered by **Lovable Cloud** (Supabase under the hood), providing
 | `notifications` | In-app notifications |
 | `saved_profiles` | Bookmarked/saved profiles |
 | `skipped_profiles` | Passed/skipped profiles |
+| `user_roles` | Admin/moderator role assignments |
+| `reports` | User content reports for moderation |
 
 ---
 
@@ -298,6 +300,52 @@ CREATE TABLE public.notifications (
 
 ---
 
+### user_roles
+
+Role-based access control for admin features.
+
+```sql
+-- Role enum
+CREATE TYPE public.app_role AS ENUM ('admin', 'moderator', 'user');
+
+CREATE TABLE public.user_roles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  role app_role NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  
+  UNIQUE(user_id, role)
+);
+```
+
+**Assigning a user as admin (run via SQL Editor):**
+```sql
+INSERT INTO public.user_roles (user_id, role) 
+VALUES ('user-uuid-here', 'admin');
+```
+
+---
+
+### reports
+
+User-submitted reports for content moderation.
+
+```sql
+CREATE TABLE public.reports (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  reporter_id UUID NOT NULL,              -- User who filed the report
+  reported_user_id UUID NOT NULL,         -- User being reported
+  reason TEXT NOT NULL,                   -- Category of report
+  description TEXT,                       -- Additional details
+  status TEXT DEFAULT 'pending',          -- 'pending' | 'resolved' | 'dismissed'
+  resolved_at TIMESTAMPTZ,
+  resolved_by UUID,                       -- Admin who resolved
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+---
+
 ## Row-Level Security (RLS) Policies
 
 All tables have RLS enabled. Below are the key policies:
@@ -306,7 +354,7 @@ All tables have RLS enabled. Below are the key policies:
 
 | Policy | Command | Rule |
 |--------|---------|------|
-| Users can view all profiles | SELECT | `true` (public read) |
+| Authenticated users can view profiles | SELECT | `auth.role() = 'authenticated'` |
 | Users can insert own profile | INSERT | `auth.uid() = user_id` |
 | Users can update own profile | UPDATE | `auth.uid() = user_id` |
 
@@ -333,6 +381,28 @@ All tables have RLS enabled. Below are the key policies:
 | Users can create calls | INSERT | `auth.uid() = caller_id` |
 | Users can view own calls | SELECT | User is caller or callee |
 | Users can update own calls | UPDATE | User is caller or callee |
+
+### matches
+
+| Policy | Command | Rule |
+|--------|---------|------|
+| Users can view own matches | SELECT | `auth.uid() IN (user1_id, user2_id)` |
+| Users can delete own matches | DELETE | `auth.uid() IN (user1_id, user2_id)` |
+
+### user_roles
+
+| Policy | Command | Rule |
+|--------|---------|------|
+| Admins can view all roles | SELECT | `has_role(auth.uid(), 'admin')` |
+| Admins can manage roles | ALL | `has_role(auth.uid(), 'admin')` |
+
+### reports
+
+| Policy | Command | Rule |
+|--------|---------|------|
+| Users can create reports | INSERT | `auth.uid() = reporter_id` |
+| Users can view own reports | SELECT | `auth.uid() = reporter_id` |
+| Admins can manage reports | ALL | `has_role(auth.uid(), 'admin')` |
 
 ---
 
@@ -382,6 +452,15 @@ SELECT * FROM get_recommended_profiles(
 ### check_and_create_match()
 
 Trigger function that automatically creates a match when mutual likes occur.
+
+### has_role(user_id, role)
+
+Security definer function to check if a user has a specific role. Used in RLS policies to prevent infinite recursion.
+
+```sql
+SELECT has_role(auth.uid(), 'admin');
+-- Returns: true/false
+```
 
 ---
 
