@@ -348,15 +348,30 @@ CREATE TABLE public.reports (
 
 ## Row-Level Security (RLS) Policies
 
-All tables have RLS enabled. Below are the key policies:
+All tables have RLS enabled with strict security policies. Below are the key policies:
 
 ### profiles
 
 | Policy | Command | Rule |
 |--------|---------|------|
-| Authenticated users can view profiles | SELECT | `auth.role() = 'authenticated'` |
+| Users can view matched/recommended profiles | SELECT | Own profile OR matched OR liked by user |
 | Users can insert own profile | INSERT | `auth.uid() = user_id` |
 | Users can update own profile | UPDATE | `auth.uid() = user_id` |
+| Users can delete own profile | DELETE | `auth.uid() = user_id` |
+
+**Security Note:** Profile visibility is restricted to prevent data scraping. Users can only view:
+- Their own profile
+- Profiles they have matched with
+- Profiles they have liked
+
+### preferences
+
+| Policy | Command | Rule |
+|--------|---------|------|
+| Users can view own preferences | SELECT | `auth.uid() = user_id` |
+| Users can create preferences | INSERT | `auth.uid() = user_id` |
+| Users can update own preferences | UPDATE | `auth.uid() = user_id` |
+| Users can delete own preferences | DELETE | `auth.uid() = user_id` |
 
 ### likes
 
@@ -366,6 +381,24 @@ All tables have RLS enabled. Below are the key policies:
 | Users can view likes | SELECT | `auth.uid() IN (from_user_id, to_user_id)` |
 | Users can delete own likes | DELETE | `auth.uid() = from_user_id` |
 
+### matches
+
+| Policy | Command | Rule |
+|--------|---------|------|
+| Users can view own matches | SELECT | `auth.uid() IN (user1_id, user2_id)` |
+| Matches require mutual consent | INSERT | User has liked AND been liked back |
+| Users can delete own matches | DELETE | `auth.uid() IN (user1_id, user2_id)` |
+
+**Security Note:** Match creation requires verified mutual likes to prevent fake matches.
+
+### conversations
+
+| Policy | Command | Rule |
+|--------|---------|------|
+| Users can view own conversations | SELECT | User is participant |
+| Users can create conversations | INSERT | User is participant |
+| Users can delete own conversations | DELETE | User is participant |
+
 ### messages
 
 | Policy | Command | Rule |
@@ -373,6 +406,7 @@ All tables have RLS enabled. Below are the key policies:
 | Users can send messages | INSERT | User is sender AND participant in conversation |
 | Users can view messages | SELECT | User is participant in conversation |
 | Users can update messages | UPDATE | User is participant in conversation |
+| Users can delete own messages | DELETE | `auth.uid() = sender_id` |
 
 ### video_calls
 
@@ -382,12 +416,32 @@ All tables have RLS enabled. Below are the key policies:
 | Users can view own calls | SELECT | User is caller or callee |
 | Users can update own calls | UPDATE | User is caller or callee |
 
-### matches
+### call_history
 
 | Policy | Command | Rule |
 |--------|---------|------|
-| Users can view own matches | SELECT | `auth.uid() IN (user1_id, user2_id)` |
-| Users can delete own matches | DELETE | `auth.uid() IN (user1_id, user2_id)` |
+| Users can create call history | INSERT | User is caller or callee |
+| Users can view call history | SELECT | User is caller or callee |
+| Users can update call records | UPDATE | User is caller or callee |
+| Users can delete call records | DELETE | User is caller or callee |
+
+### notifications
+
+| Policy | Command | Rule |
+|--------|---------|------|
+| Users can create notifications | INSERT | Sender cannot create for self |
+| Users can view own notifications | SELECT | `auth.uid() = user_id` |
+| Users can mark as read only | UPDATE | Can only change `is_read` field |
+
+**Security Note:** Users cannot modify notification content, only mark as read.
+
+### skipped_profiles
+
+| Policy | Command | Rule |
+|--------|---------|------|
+| Users can create skips | INSERT | `auth.uid() = user_id` |
+| Users can view own skips | SELECT | `auth.uid() = user_id` |
+| Users can delete own skips | DELETE | `auth.uid() = user_id` |
 
 ### user_roles
 
@@ -403,6 +457,30 @@ All tables have RLS enabled. Below are the key policies:
 | Users can create reports | INSERT | `auth.uid() = reporter_id` |
 | Users can view own reports | SELECT | `auth.uid() = reporter_id` |
 | Admins can manage reports | ALL | `has_role(auth.uid(), 'admin')` |
+
+---
+
+## Security Best Practices
+
+### Implemented Security Measures
+
+1. **Profile Data Protection**: Profiles are only visible to matched users and through the recommendation system, preventing data scraping.
+
+2. **Mutual Consent for Matches**: Matches can only be created when both users have liked each other, preventing fake match creation.
+
+3. **Notification Integrity**: Users can only mark notifications as read; they cannot modify notification content to prevent spoofing.
+
+4. **Call History Integrity**: Only participants in a call can create or modify call history records.
+
+5. **GDPR Compliance**: Users can delete their own profiles, messages, conversations, and call records.
+
+6. **Role-Based Access Control**: Admin functions are protected using the `has_role()` security definer function.
+
+### Recommended Additional Steps
+
+1. **Enable Leaked Password Protection**: Configure in authentication settings to prevent use of compromised passwords.
+
+2. **Storage Security**: Chat media and photos buckets are private with signed URL access.
 
 ---
 
