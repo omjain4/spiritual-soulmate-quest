@@ -44,7 +44,7 @@ export const useProfiles = () => {
 
   const fetchRecommendedProfiles = useCallback(async () => {
     if (!user) return;
-    
+
     setLoading(true);
     try {
       const { data, error } = await supabase.rpc('get_recommended_profiles', {
@@ -53,12 +53,12 @@ export const useProfiles = () => {
       });
 
       if (error) throw error;
-      
+
       const formattedProfiles: Profile[] = (data || []).map((p: any) => ({
         ...p,
         prompts: Array.isArray(p.prompts) ? p.prompts : []
       }));
-      
+
       setProfiles(formattedProfiles);
       setCurrentIndex(0);
     } catch (error) {
@@ -72,15 +72,44 @@ export const useProfiles = () => {
     fetchRecommendedProfiles();
   }, [fetchRecommendedProfiles]);
 
-  const likeProfile = async (targetUserId: string) => {
+  const likeProfile = async (targetUserId: string, message?: string) => {
     if (!user) return false;
-    
+
     try {
       const { error } = await supabase
         .from('likes')
         .insert({ from_user_id: user.id, to_user_id: targetUserId });
 
       if (error) throw error;
+
+      if (message) {
+        let convId;
+        const { data: existing } = await supabase
+          .from("conversations")
+          .select("id")
+          .or(`and(participant1_id.eq.${user.id},participant2_id.eq.${targetUserId}),and(participant1_id.eq.${targetUserId},participant2_id.eq.${user.id})`)
+          .maybeSingle();
+
+        if (existing) {
+          convId = existing.id;
+        } else {
+          const { data: newConv } = await supabase
+            .from("conversations")
+            .insert({ participant1_id: user.id, participant2_id: targetUserId })
+            .select("id")
+            .single();
+          if (newConv) convId = newConv.id;
+        }
+
+        if (convId) {
+          await supabase.from("messages").insert({
+            conversation_id: convId,
+            sender_id: user.id,
+            content: message
+          });
+          await supabase.from("conversations").update({ last_message_at: new Date().toISOString() }).eq("id", convId);
+        }
+      }
 
       // Check if it's a match
       const { data: matchData } = await supabase
@@ -106,7 +135,7 @@ export const useProfiles = () => {
 
   const skipProfile = async (targetUserId: string) => {
     if (!user) return;
-    
+
     try {
       await supabase
         .from('skipped_profiles')
@@ -118,7 +147,7 @@ export const useProfiles = () => {
 
   const saveProfile = async (targetUserId: string) => {
     if (!user) return;
-    
+
     try {
       const { error } = await supabase
         .from('saved_profiles')
@@ -137,7 +166,7 @@ export const useProfiles = () => {
 
   const unsaveProfile = async (targetUserId: string) => {
     if (!user) return;
-    
+
     try {
       await supabase
         .from('saved_profiles')
@@ -188,7 +217,7 @@ export const useLikes = () => {
 
   const fetchLikes = useCallback(async () => {
     if (!user) return;
-    
+
     setLoading(true);
     try {
       // Fetch received likes
@@ -258,7 +287,7 @@ export const useMatches = () => {
 
   const fetchMatches = useCallback(async () => {
     if (!user) return;
-    
+
     setLoading(true);
     try {
       const { data } = await supabase
@@ -269,10 +298,10 @@ export const useMatches = () => {
 
       if (data) {
         // Fetch profile details for each match
-        const matchedUserIds = data.map(m => 
+        const matchedUserIds = data.map(m =>
           m.user1_id === user.id ? m.user2_id : m.user1_id
         );
-        
+
         const { data: profiles } = await supabase
           .from('profiles')
           .select('*')
@@ -308,7 +337,7 @@ export const usePreferences = () => {
 
   const fetchPreferences = useCallback(async () => {
     if (!user) return;
-    
+
     try {
       const { data, error } = await supabase
         .from('preferences')
@@ -331,7 +360,7 @@ export const usePreferences = () => {
 
   const savePreferences = async (prefs: Partial<Preferences>) => {
     if (!user) return;
-    
+
     try {
       const { error } = await supabase
         .from('preferences')

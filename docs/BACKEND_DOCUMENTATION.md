@@ -19,7 +19,7 @@ This document provides comprehensive documentation for the backend architecture 
 
 ## Architecture Overview
 
-The backend is powered by **Lovable Cloud** (Supabase under the hood), providing:
+The backend is powered by **Supabase**, providing:
 
 - **PostgreSQL Database** - Relational database with full SQL support
 - **Real-time Subscriptions** - WebSocket-based live updates for chat/calls

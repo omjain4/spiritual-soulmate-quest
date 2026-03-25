@@ -3,18 +3,27 @@ import { Bell, X } from "lucide-react";
 import { useState } from "react";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 
+const DISMISSED_KEY = "notification_banner_dismissed";
+
 const NotificationPermissionBanner = () => {
   const { isSupported, permission, requestPermission } = usePushNotifications();
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissed, setDismissed] = useState(() => {
+    return localStorage.getItem(DISMISSED_KEY) === "true";
+  });
 
   if (!isSupported || permission === "granted" || permission === "denied" || dismissed) {
     return null;
   }
 
+  const handleDismiss = () => {
+    setDismissed(true);
+    localStorage.setItem(DISMISSED_KEY, "true");
+  };
+
   const handleEnable = async () => {
     const granted = await requestPermission();
     if (granted) {
-      setDismissed(true);
+      handleDismiss();
     }
   };
 
@@ -42,7 +51,7 @@ const NotificationPermissionBanner = () => {
               Enable
             </button>
             <button
-              onClick={() => setDismissed(true)}
+              onClick={handleDismiss}
               className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
             >
               <X className="h-4 w-4" />

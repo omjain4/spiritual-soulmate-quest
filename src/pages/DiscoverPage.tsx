@@ -33,6 +33,8 @@ const DiscoverPage = () => {
   const [viewingProfile, setViewingProfile] = useState<Profile | null>(null);
   const [profilePhotoIndex, setProfilePhotoIndex] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
+  const [replyingToPrompt, setReplyingToPrompt] = useState<{ profile: Profile, prompt: any } | null>(null);
+  const [replyMessage, setReplyMessage] = useState("");
   const [filters, setFilters] = useState({
     ageRange: [18, 50] as [number, number],
     locations: [] as string[],
@@ -102,9 +104,9 @@ const DiscoverPage = () => {
 
   const handleSwipe = useCallback(async (swipeDirection: "left" | "right") => {
     if (!currentProfile) return;
-    
+
     setDirection(swipeDirection);
-    
+
     if (swipeDirection === "right") {
       const isMatch = await likeProfile(currentProfile.user_id);
       if (!isMatch) {
@@ -116,7 +118,7 @@ const DiscoverPage = () => {
     } else {
       await skipProfile(currentProfile.user_id);
     }
-    
+
     setTimeout(() => {
       nextProfile();
       setDirection(null);
@@ -161,7 +163,7 @@ const DiscoverPage = () => {
       <Navbar />
 
       <NotificationPermissionBanner />
-      
+
       <div className="mx-auto max-w-6xl px-6 pb-24 pt-28 md:px-12 md:pt-32 lg:px-20">
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-10 flex items-end justify-between">
@@ -178,13 +180,12 @@ const DiscoverPage = () => {
                 <LayoutGrid className="h-5 w-5" />
               </button>
             </div>
-            <button 
+            <button
               onClick={() => setShowFilters(true)}
-              className={`flex h-12 w-12 items-center justify-center rounded-full border transition-colors ${
-                filters.locations.length > 0 || filters.sects.length > 0 || filters.dietary.length > 0
+              className={`flex h-12 w-12 items-center justify-center rounded-full border transition-colors ${filters.locations.length > 0 || filters.sects.length > 0 || filters.dietary.length > 0
                   ? "border-primary bg-primary/10 text-primary"
                   : "border-border text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
+                }`}
             >
               <Filter className="h-5 w-5" />
             </button>
@@ -194,19 +195,19 @@ const DiscoverPage = () => {
         {isEmpty || filteredProfiles.length === 0 ? (
           <EmptyState
             icon={Heart}
-            title={filters.locations.length > 0 || filters.sects.length > 0 || filters.dietary.length > 0 
-              ? "No matches with current filters" 
+            title={filters.locations.length > 0 || filters.sects.length > 0 || filters.dietary.length > 0
+              ? "No matches with current filters"
               : "No profiles yet"}
             description={filters.locations.length > 0 || filters.sects.length > 0 || filters.dietary.length > 0
               ? "Try adjusting your filters to see more profiles"
               : "We're looking for matches based on your preferences. Check back soon!"}
-            action={{ 
-              label: filters.locations.length > 0 || filters.sects.length > 0 || filters.dietary.length > 0 
-                ? "Clear Filters" 
-                : "Refresh", 
+            action={{
+              label: filters.locations.length > 0 || filters.sects.length > 0 || filters.dietary.length > 0
+                ? "Clear Filters"
+                : "Refresh",
               onClick: filters.locations.length > 0 || filters.sects.length > 0 || filters.dietary.length > 0
                 ? () => setFilters({ ageRange: [18, 50], locations: [], sects: [], dietary: [] })
-                : refetch 
+                : refetch
             }}
           />
         ) : viewMode === "grid" ? (
@@ -245,31 +246,91 @@ const DiscoverPage = () => {
               </div>
 
               {/* Card */}
-              <div className="relative h-[600px] w-full max-w-md md:h-[650px]">
+              <div className="relative h-[650px] w-full max-w-md md:max-w-4xl">
                 <AnimatePresence mode="wait">
                   {currentFilteredProfile ? (
                     <motion.div key={currentFilteredProfile.profile_id} className="absolute inset-0" variants={cardVariants} initial="enter" animate="center" exit={direction === "left" ? "exitLeft" : "exitRight"} transition={{ type: "spring", stiffness: 300, damping: 30 }} drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.8} onDragEnd={handleDragEnd} whileDrag={{ cursor: "grabbing" }}>
-                      <div className="h-full overflow-hidden rounded-3xl bg-card shadow-2xl">
-                        <div className="relative h-full">
+                      <div className="h-full flex flex-col md:flex-row overflow-hidden rounded-3xl bg-card shadow-2xl">
+
+                        {/* Left Side: Photos */}
+                        <div className="relative h-1/2 md:h-full md:w-1/2">
                           <img src={getMainPhoto(currentFilteredProfile)} alt={currentFilteredProfile.name} className="h-full w-full object-cover" draggable={false} />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                          <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-black/80 via-black/20 to-transparent" />
                           <motion.div className="absolute left-6 top-6 rounded-xl bg-red-500 px-4 py-2 text-lg font-bold text-white" style={{ opacity: direction === "left" ? 1 : 0 }}>NOPE</motion.div>
                           <motion.div className="absolute right-6 top-6 rounded-xl bg-green-500 px-4 py-2 text-lg font-bold text-white" style={{ opacity: direction === "right" ? 1 : 0 }}>LIKE</motion.div>
-                          <div className="absolute right-4 top-4"><div className="flex items-center gap-1 rounded-full bg-white/20 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm"><Sparkles className="h-4 w-4" />{currentFilteredProfile.match_score}% Match</div></div>
-                          <div className="absolute bottom-0 left-0 right-0 p-6">
-                            <h2 className="font-serif text-4xl font-light text-white">{currentFilteredProfile.name}{calculateAge(currentFilteredProfile.date_of_birth) && `, ${calculateAge(currentFilteredProfile.date_of_birth)}`}</h2>
+                          <div className="absolute right-4 top-4 md:hidden">
+                            <div className="flex items-center gap-1 rounded-full bg-white/20 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm"><Sparkles className="h-4 w-4" />{currentFilteredProfile.match_score}% Match</div>
+                          </div>
+                          <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
+                            <h2 className="font-serif text-3xl md:text-4xl font-light text-white">{currentFilteredProfile.name}{calculateAge(currentFilteredProfile.date_of_birth) && `, ${calculateAge(currentFilteredProfile.date_of_birth)}`}</h2>
                             <p className="mt-1 text-white/70">{currentFilteredProfile.location || "Location not set"}</p>
                             {currentFilteredProfile.sect && <span className="mt-3 inline-block rounded-full bg-white/20 px-4 py-1.5 text-sm font-medium text-white backdrop-blur-sm">{currentFilteredProfile.sect}</span>}
-                            <div className="mt-4 space-y-2">
-                              {currentFilteredProfile.prompts?.slice(0, 1).map((prompt, idx) => (
-                                <div key={idx} className="rounded-xl bg-white/10 p-4 backdrop-blur-sm">
-                                  <p className="text-xs text-white/60">{prompt.question}</p>
-                                  <p className="mt-1 text-sm text-white">{prompt.answer}</p>
+                          </div>
+                        </div>
+
+                        {/* Right Side: Details (Scrollable) */}
+                        <div className="h-1/2 md:h-full md:w-1/2 overflow-y-auto p-6 md:p-8 bg-background scrollbar-hide">
+                          <div className="hidden md:flex justify-end mb-6">
+                            <div className="flex items-center gap-1 rounded-full bg-primary/10 text-primary px-4 py-2 text-sm font-semibold"><Sparkles className="h-4 w-4" />{currentFilteredProfile.match_score}% Match</div>
+                          </div>
+
+                          {currentFilteredProfile.bio && (
+                            <div className="mb-6 pointer-events-none">
+                              <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">About me</h3>
+                              <p className="text-foreground">{currentFilteredProfile.bio}</p>
+                            </div>
+                          )}
+
+                          {currentFilteredProfile.prompts?.length > 0 && (
+                            <div className="space-y-4 mb-6 relative z-10">
+                              {currentFilteredProfile.prompts.map((prompt: any, idx: number) => (
+                                <div key={idx} className="relative group rounded-2xl bg-muted p-5 transition-all hover:shadow-md cursor-pointer pointer-events-auto"
+                                  onPointerDownCapture={(e) => {
+                                    e.stopPropagation();
+                                    setReplyingToPrompt({ profile: currentFilteredProfile, prompt });
+                                  }}
+                                >
+                                  <p className="text-sm text-muted-foreground font-medium mb-2">{prompt.question}</p>
+                                  <p className="text-foreground text-lg">{prompt.answer}</p>
+                                  <div className="absolute bottom-4 right-4 opacity-0 md:opacity-0 group-hover:opacity-100 transition-opacity bg-background border border-border text-foreground rounded-full p-2 shadow-sm flex items-center gap-2">
+                                    <MessageCircle className="h-4 w-4" />
+                                    <span className="text-xs font-medium pr-1">Reply</span>
+                                  </div>
                                 </div>
                               ))}
                             </div>
+                          )}
+
+                          <div className="flex flex-wrap gap-2 mb-6 pointer-events-none">
+                            {currentFilteredProfile.interests?.map((interest: string, idx: number) => (
+                              <span key={idx} className="rounded-full bg-secondary px-3 py-1 text-sm text-secondary-foreground">{interest}</span>
+                            ))}
                           </div>
+
+                          <div className="space-y-3 pointer-events-none">
+                            {currentFilteredProfile.occupation && (
+                              <div className="flex items-center gap-3 text-muted-foreground">
+                                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">💼</div>
+                                <span className="text-sm">{currentFilteredProfile.occupation}</span>
+                              </div>
+                            )}
+                            {currentFilteredProfile.education && (
+                              <div className="flex items-center gap-3 text-muted-foreground">
+                                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">🎓</div>
+                                <span className="text-sm">{currentFilteredProfile.education}</span>
+                              </div>
+                            )}
+                            {currentFilteredProfile.dietary_preference && (
+                              <div className="flex items-center gap-3 text-muted-foreground">
+                                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">🥗</div>
+                                <span className="text-sm">{currentFilteredProfile.dietary_preference}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="h-10 md:h-0"></div> {/* Spacer for mobile */}
                         </div>
+
                       </div>
                     </motion.div>
                   ) : (
@@ -323,7 +384,7 @@ const DiscoverPage = () => {
               <div className="relative aspect-[4/5] overflow-hidden">
                 <img src={getProfilePhotos(viewingProfile)[profilePhotoIndex]} alt={viewingProfile.name} className="h-full w-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                
+
                 {/* Photo navigation */}
                 {getProfilePhotos(viewingProfile).length > 1 && (
                   <>
@@ -336,7 +397,7 @@ const DiscoverPage = () => {
                     <button onClick={() => setProfilePhotoIndex(Math.min(getProfilePhotos(viewingProfile).length - 1, profilePhotoIndex + 1))} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/20 p-2 text-white backdrop-blur-sm"><ChevronRight className="h-6 w-6" /></button>
                   </>
                 )}
-                
+
                 <div className="absolute bottom-0 left-0 right-0 p-6">
                   <div className="flex items-center gap-2">
                     <h2 className="font-serif text-3xl text-white">{viewingProfile.name}{calculateAge(viewingProfile.date_of_birth) && `, ${calculateAge(viewingProfile.date_of_birth)}`}</h2>
@@ -415,6 +476,66 @@ const DiscoverPage = () => {
         filters={filters}
         onApply={setFilters}
       />
+
+      {/* Reply to Prompt Modal */}
+      <Dialog open={!!replyingToPrompt} onOpenChange={() => { setReplyingToPrompt(null); setReplyMessage(""); }}>
+        <DialogContent className="sm:max-w-md">
+          {replyingToPrompt && (
+            <div className="flex flex-col gap-4 pt-4">
+              <div className="rounded-xl bg-muted p-4">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Prompt</p>
+                <p className="text-sm font-medium text-muted-foreground">{replyingToPrompt.prompt.question}</p>
+                <p className="mt-1 text-base text-foreground">{replyingToPrompt.prompt.answer}</p>
+              </div>
+              <div className="flex gap-4 items-start">
+                <img src={getMainPhoto(replyingToPrompt.profile)} alt={replyingToPrompt.profile.name} className="w-12 h-12 rounded-full object-cover shadow-sm" />
+                <div className="flex-1 w-full relative">
+                  <textarea
+                    autoFocus
+                    value={replyMessage}
+                    onChange={(e) => setReplyMessage(e.target.value)}
+                    placeholder={`Send a message with your like to ${replyingToPrompt.profile.name}...`}
+                    className="w-full min-h-[100px] resize-none rounded-xl border border-border bg-background p-3 pb-8 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  />
+                  <div className="absolute right-3 bottom-3 text-xs text-muted-foreground">
+                    {replyMessage.length}/150
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 mt-4 border-t pt-4">
+                <button
+                  onClick={() => { setReplyingToPrompt(null); setReplyMessage(""); }}
+                  className="px-4 py-2 text-muted-foreground hover:bg-muted rounded-full transition-colors text-sm font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    const msg = `**Replying to:** *"${replyingToPrompt.prompt.question}"*\n\n${replyMessage}`;
+                    const targetId = replyingToPrompt.profile.user_id;
+
+                    setReplyingToPrompt(null);
+                    setReplyMessage("");
+
+                    const isMatch = await likeProfile(targetId, msg);
+                    if (!isMatch) {
+                      toast({
+                        title: "Like sent! 💌",
+                        description: "Your message has been sent along with your like.",
+                      });
+                    }
+                    setTimeout(() => nextProfile(), 300);
+                  }}
+                  disabled={!replyMessage.trim()}
+                  className="px-6 py-2 bg-primary text-primary-foreground rounded-full text-sm font-medium transition-transform active:scale-95 disabled:opacity-50 hover:bg-primary/90 shadow-sm flex items-center gap-2"
+                >
+                  <Heart className="h-4 w-4" fill="currentColor" /> Send Like
+                </button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>

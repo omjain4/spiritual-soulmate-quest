@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import SelectionCard from "@/components/SelectionCard";
 import QuizQuestion from "@/components/QuizQuestion";
 import PromptCard from "@/components/PromptCard";
+import PromptPicker from "@/components/PromptPicker";
 import PreferencesStep from "@/components/PreferencesStep";
 import PhotoUploadStep from "@/components/PhotoUploadStep";
 import { Input } from "@/components/ui/input";
@@ -57,12 +58,7 @@ const quizQuestions = [
   },
 ];
 
-const defaultPrompts = [
-  { id: "tirth", prompt: "My favorite Tirth is...", answer: "" },
-  { id: "sundays", prompt: "On Sundays, I usually...", answer: "" },
-  { id: "values", prompt: "A value I hold dear is...", answer: "" },
-  { id: "looking", prompt: "I'm looking for someone who...", answer: "" },
-];
+
 
 type FieldErrors = Partial<Record<keyof BasicInfoFormData, string>>;
 
@@ -71,10 +67,10 @@ const OnboardingPage = () => {
   const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
   const { uploadPhoto, uploading } = usePhotoUpload();
-  
+
   const [currentStep, setCurrentStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
-  
+
   const [basicInfo, setBasicInfo] = useState({
     firstName: "",
     lastName: "",
@@ -87,14 +83,13 @@ const OnboardingPage = () => {
   const [selectedSect, setSelectedSect] = useState<string | null>(null);
   const [quizAnswers, setQuizAnswers] = useState<Record<number, string>>({});
   const [currentQuizIndex, setCurrentQuizIndex] = useState(0);
-  const [promptAnswers, setPromptAnswers] = useState<Record<string, string>>({});
-  const [editingPrompt, setEditingPrompt] = useState<string | null>(null);
-  const [tempPromptAnswer, setTempPromptAnswer] = useState("");
-  
+  const [selectedPrompts, setSelectedPrompts] = useState<{ question: string; answer: string }[]>([]);
+  const [isPromptPickerOpen, setIsPromptPickerOpen] = useState(false);
+
   // Photo state
   const [photos, setPhotos] = useState<string[]>([]);
   const [mainPhotoIndex, setMainPhotoIndex] = useState(0);
-  
+
   // Preferences state
   const [preferences, setPreferences] = useState({
     minAge: 21,
@@ -166,7 +161,7 @@ const OnboardingPage = () => {
       });
       return;
     }
-    
+
     if (currentStep < TOTAL_STEPS) {
       setCurrentStep(currentStep + 1);
     } else {
@@ -189,19 +184,13 @@ const OnboardingPage = () => {
     }, 300);
   };
 
-  const handlePromptSave = () => {
-    if (editingPrompt) {
-      setPromptAnswers({ ...promptAnswers, [editingPrompt]: tempPromptAnswer });
-      setEditingPrompt(null);
-      setTempPromptAnswer("");
-    }
-  };
+
 
   const calculateRating = () => {
     let score = 0;
     if (selectedSect) score += 20;
     score += Object.keys(quizAnswers).length * 10;
-    score += Object.values(promptAnswers).filter((a) => a).length * 10;
+    score += selectedPrompts.filter(p => p.answer).length * 10;
     if (photos.length >= 3) score += 20;
     return Math.min(score, 100);
   };
@@ -212,14 +201,10 @@ const OnboardingPage = () => {
 
   const saveOnboarding = async () => {
     if (!user) return;
-    
+
     setIsSaving(true);
     try {
-      // Prepare prompts data
-      const promptsData = defaultPrompts.map(p => ({
-        question: p.prompt,
-        answer: promptAnswers[p.id] || ""
-      })).filter(p => p.answer);
+      const promptsData = selectedPrompts.filter(p => p.answer);
 
       // Update profile
       const { error: profileError } = await supabase
@@ -261,12 +246,12 @@ const OnboardingPage = () => {
       if (prefError) throw prefError;
 
       await refreshProfile();
-      
+
       toast({
         title: "Profile complete! 🎉",
         description: "Let's find your perfect match.",
       });
-      
+
       navigate("/discover");
     } catch (error) {
       console.error('Error saving onboarding:', error);
@@ -528,41 +513,36 @@ const OnboardingPage = () => {
           <motion.div key="step5" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
             <div className="text-center">
               <h2 className="font-serif text-3xl font-light text-foreground md:text-4xl">Your Vibe</h2>
-              <p className="mt-3 text-muted-foreground">Answer prompts to show your personality</p>
+              <p className="mt-3 text-muted-foreground">Pick up to 3 prompts to show your personality</p>
             </div>
 
             <div className="space-y-3">
-              {defaultPrompts.map((prompt) => (
+              {selectedPrompts.map((prompt, index) => (
                 <PromptCard
-                  key={prompt.id}
-                  prompt={prompt.prompt}
-                  answer={promptAnswers[prompt.id] || ""}
-                  onEdit={() => {
-                    setEditingPrompt(prompt.id);
-                    setTempPromptAnswer(promptAnswers[prompt.id] || "");
-                  }}
+                  key={index}
+                  prompt={prompt.question}
+                  answer={prompt.answer}
+                  onEdit={() => setIsPromptPickerOpen(true)}
                 />
               ))}
+
+              {selectedPrompts.length < 3 && (
+                <button
+                  onClick={() => setIsPromptPickerOpen(true)}
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border py-8 text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                >
+                  <span className="text-xl">+</span>
+                  <span className="font-medium">{selectedPrompts.length === 0 ? 'Choose your first prompt' : 'Add another prompt'}</span>
+                </button>
+              )}
             </div>
 
-            {editingPrompt && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-2xl border border-border bg-card p-4">
-                <p className="mb-2 text-sm text-muted-foreground">
-                  {defaultPrompts.find(p => p.id === editingPrompt)?.prompt}
-                </p>
-                <textarea
-                  value={tempPromptAnswer}
-                  onChange={(e) => setTempPromptAnswer(e.target.value)}
-                  placeholder="Type your answer..."
-                  className="w-full resize-none rounded-xl border border-border bg-background p-3 text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none"
-                  rows={3}
-                />
-                <div className="mt-3 flex gap-2">
-                  <button onClick={() => setEditingPrompt(null)} className="flex-1 rounded-full border border-border py-2 text-sm hover:bg-muted">Cancel</button>
-                  <button onClick={handlePromptSave} className="flex-1 rounded-full bg-foreground py-2 text-sm text-background">Save</button>
-                </div>
-              </motion.div>
-            )}
+            <PromptPicker
+              open={isPromptPickerOpen}
+              onOpenChange={setIsPromptPickerOpen}
+              currentPrompts={selectedPrompts}
+              onSave={setSelectedPrompts}
+            />
           </motion.div>
         );
 
@@ -615,7 +595,7 @@ const OnboardingPage = () => {
                 <div className="text-sm text-muted-foreground">Photos</div>
               </div>
               <div className="rounded-xl bg-muted p-4">
-                <div className="text-2xl font-light">{Object.keys(promptAnswers).filter(k => promptAnswers[k]).length}</div>
+                <div className="text-2xl font-light">{selectedPrompts.filter(p => p.answer).length}</div>
                 <div className="text-sm text-muted-foreground">Prompts</div>
               </div>
             </div>

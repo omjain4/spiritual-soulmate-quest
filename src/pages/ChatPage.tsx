@@ -32,7 +32,7 @@ const ChatPage = () => {
   const { user, isAuthenticated } = useAuth();
   const [searchParams] = useSearchParams();
   const targetUserId = searchParams.get("userId");
-  
+
   const {
     conversations,
     messages: realMessages,
@@ -55,6 +55,8 @@ const ChatPage = () => {
     id: string;
     name: string;
     avatar_url: string | null;
+    photos: string[] | null;
+    main_photo_index: number | null;
   } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
@@ -98,7 +100,7 @@ const ChatPage = () => {
       if (callerId && callerId !== user?.id) {
         const { data: profile } = await supabase
           .from("profiles")
-          .select("user_id, name, avatar_url")
+          .select("user_id, name, avatar_url, photos, main_photo_index")
           .eq("user_id", callerId)
           .maybeSingle();
 
@@ -106,7 +108,9 @@ const ChatPage = () => {
           setOtherUserProfile({
             id: profile.user_id,
             name: profile.name,
-            avatar_url: profile.avatar_url,
+            avatar_url: profile.photos?.[profile.main_photo_index || 0] || profile.avatar_url,
+            photos: profile.photos,
+            main_photo_index: profile.main_photo_index,
           });
         }
       }
@@ -127,10 +131,10 @@ const ChatPage = () => {
   useEffect(() => {
     const initConversation = async () => {
       if (!isAuthenticated || !targetUserId || !user || hasCreatedConversation.current) return;
-      
+
       // Don't start a conversation with yourself
       if (targetUserId === user.id) return;
-      
+
       hasCreatedConversation.current = true;
       setIsCreatingConversation(true);
 
@@ -138,7 +142,7 @@ const ChatPage = () => {
         // Fetch the other user's profile
         const { data: profile } = await supabase
           .from("profiles")
-          .select("user_id, name, avatar_url")
+          .select("user_id, name, avatar_url, photos, main_photo_index")
           .eq("user_id", targetUserId)
           .maybeSingle();
 
@@ -146,7 +150,9 @@ const ChatPage = () => {
           setOtherUserProfile({
             id: profile.user_id,
             name: profile.name,
-            avatar_url: profile.avatar_url,
+            avatar_url: profile.photos?.[profile.main_photo_index || 0] || profile.avatar_url,
+            photos: profile.photos,
+            main_photo_index: profile.main_photo_index,
           });
         }
 
@@ -218,10 +224,10 @@ const ChatPage = () => {
         const mediaType = file.type.startsWith("image/")
           ? "image"
           : file.type.startsWith("video/")
-          ? "video"
-          : file.type.startsWith("audio/")
-          ? "audio"
-          : "file";
+            ? "video"
+            : file.type.startsWith("audio/")
+              ? "audio"
+              : "file";
 
         await sendMessage(activeConversationId, "", mediaUrl, mediaType);
       }
@@ -271,9 +277,8 @@ const ChatPage = () => {
       <div className="mx-auto flex max-w-6xl px-6 pt-20 md:pt-24 lg:px-12">
         {/* Match List - Desktop Sidebar / Mobile Full Screen */}
         <div
-          className={`flex-shrink-0 border-r border-border bg-card md:w-72 ${
-            showChatView ? "hidden md:block" : "block w-full"
-          }`}
+          className={`flex-shrink-0 border-r border-border bg-card md:w-72 ${showChatView ? "hidden md:block" : "block w-full"
+            }`}
         >
           <div className="p-6">
             <h2 className="font-serif text-2xl font-light text-foreground">Messages</h2>
@@ -295,11 +300,10 @@ const ChatPage = () => {
                   <motion.button
                     key={conv.id}
                     onClick={() => setActiveConversationId(conv.id)}
-                    className={`flex w-full items-center gap-3 rounded-xl p-3 text-left transition-colors ${
-                      activeConversationId === conv.id
+                    className={`flex w-full items-center gap-3 rounded-xl p-3 text-left transition-colors ${activeConversationId === conv.id
                         ? "bg-primary/5"
                         : "hover:bg-muted/50"
-                    }`}
+                      }`}
                     whileTap={{ scale: 0.99 }}
                   >
                     <div className="relative flex-shrink-0">
@@ -344,11 +348,10 @@ const ChatPage = () => {
                   <motion.button
                     key={match.id}
                     onClick={() => setSelectedMockMatch(match)}
-                    className={`flex w-full items-center gap-3 rounded-xl p-3 text-left transition-colors ${
-                      selectedMockMatch?.id === match.id
+                    className={`flex w-full items-center gap-3 rounded-xl p-3 text-left transition-colors ${selectedMockMatch?.id === match.id
                         ? "bg-primary/5"
                         : "hover:bg-muted/50"
-                    }`}
+                      }`}
                     whileTap={{ scale: 0.99 }}
                   >
                     <div className="relative flex-shrink-0">
@@ -386,9 +389,8 @@ const ChatPage = () => {
 
         {/* Chat View */}
         <div
-          className={`flex min-h-[calc(100vh-5rem)] flex-1 flex-col md:min-h-[calc(100vh-6rem)] ${
-            !showChatView ? "hidden md:flex" : "flex"
-          }`}
+          className={`flex min-h-[calc(100vh-5rem)] flex-1 flex-col md:min-h-[calc(100vh-6rem)] ${!showChatView ? "hidden md:flex" : "flex"
+            }`}
         >
           {isCreatingConversation ? (
             <div className="flex flex-1 items-center justify-center">
@@ -468,47 +470,44 @@ const ChatPage = () => {
                 <div className="space-y-4">
                   {isAuthenticated
                     ? realMessages.map((msg) => (
-                        <ChatMessage
-                          key={msg.id}
-                          content={msg.content}
-                          mediaUrl={msg.media_url}
-                          mediaType={msg.media_type}
-                          isOwn={msg.sender_id === user?.id}
-                          isRead={msg.is_read}
-                          createdAt={msg.created_at}
-                          senderAvatar={msg.sender_id !== user?.id ? displayAvatar : undefined}
-                          senderName={msg.sender_id !== user?.id ? displayName : undefined}
-                        />
-                      ))
+                      <ChatMessage
+                        key={msg.id}
+                        content={msg.content}
+                        mediaUrl={msg.media_url}
+                        mediaType={msg.media_type}
+                        isOwn={msg.sender_id === user?.id}
+                        isRead={msg.is_read}
+                        createdAt={msg.created_at}
+                        senderAvatar={msg.sender_id !== user?.id ? displayAvatar : undefined}
+                        senderName={msg.sender_id !== user?.id ? displayName : undefined}
+                      />
+                    ))
                     : localMessages.map((msg) => (
-                        <motion.div
-                          key={msg.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className={`flex ${
-                            msg.sender === "me" ? "justify-end" : "justify-start"
+                      <motion.div
+                        key={msg.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`flex ${msg.sender === "me" ? "justify-end" : "justify-start"
                           }`}
-                        >
-                          <div
-                            className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                              msg.sender === "me"
-                                ? "bg-foreground text-background"
-                                : "bg-muted text-foreground"
+                      >
+                        <div
+                          className={`max-w-[80%] rounded-2xl px-4 py-3 ${msg.sender === "me"
+                              ? "bg-foreground text-background"
+                              : "bg-muted text-foreground"
                             }`}
-                          >
-                            <p className="text-sm leading-relaxed">{msg.text}</p>
-                            <div
-                              className={`mt-1.5 flex items-center justify-end gap-1 text-xs ${
-                                msg.sender === "me"
-                                  ? "text-background/60"
-                                  : "text-muted-foreground"
+                        >
+                          <p className="text-sm leading-relaxed">{msg.text}</p>
+                          <div
+                            className={`mt-1.5 flex items-center justify-end gap-1 text-xs ${msg.sender === "me"
+                                ? "text-background/60"
+                                : "text-muted-foreground"
                               }`}
-                            >
-                              <span>{msg.time}</span>
-                            </div>
+                          >
+                            <span>{msg.time}</span>
                           </div>
-                        </motion.div>
-                      ))}
+                        </div>
+                      </motion.div>
+                    ))}
 
                   {/* Typing Indicator */}
                   <AnimatePresence>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { 
+import {
   ArrowLeft, User, Camera, Edit3, Save, X,
   MapPin, Briefcase, GraduationCap, Heart, Sparkles,
   Settings, Users, ChevronRight, Check, LogOut, Calendar, AlertCircle, Loader2
@@ -10,6 +10,7 @@ import RatingBadge from "@/components/RatingBadge";
 import ChauviharWidget from "@/components/ChauviharWidget";
 import InterestStamps, { defaultInterestStamps } from "@/components/InterestStamps";
 import PromptCard from "@/components/PromptCard";
+import PromptPicker from "@/components/PromptPicker";
 import PrivacyControls from "@/components/PrivacyControls";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -32,13 +33,14 @@ const ProfilePage = () => {
   const { user, profile, logout, refreshProfile } = useAuth();
   const { uploadPhoto, uploading, updateProfilePhotos, setMainPhoto } = usePhotoUpload();
   const { toast } = useToast();
-  
+
   const [activeTab, setActiveTab] = useState<"profile" | "settings">("profile");
   const [isEditing, setIsEditing] = useState(false);
   const [isEditingPhotos, setIsEditingPhotos] = useState(false);
   const [isEditingInterests, setIsEditingInterests] = useState(false);
   const [isEditingCareer, setIsEditingCareer] = useState(false);
   const [editingPrompt, setEditingPrompt] = useState<string | null>(null);
+  const [isEditingPrompts, setIsEditingPrompts] = useState(false);
   const [tempPromptAnswer, setTempPromptAnswer] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [isSaving, setIsSaving] = useState(false);
@@ -46,7 +48,7 @@ const ProfilePage = () => {
   // Local state from profile
   const [photos, setPhotos] = useState<string[]>([]);
   const [mainPhotoIndex, setMainPhotoIndex] = useState(0);
-  const [prompts, setPrompts] = useState<{id: string; prompt: string; answer: string}[]>([]);
+  const [prompts, setPrompts] = useState<{ id: string; prompt: string; answer: string }[]>([]);
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [tempCareer, setTempCareer] = useState({ occupation: "", education: "" });
 
@@ -140,7 +142,7 @@ const ProfilePage = () => {
 
   const handleSaveProfile = async () => {
     if (!validateForm() || !user) return;
-    
+
     setIsSaving(true);
     try {
       const { error } = await supabase
@@ -157,7 +159,7 @@ const ProfilePage = () => {
         .eq('user_id', user.id);
 
       if (error) throw error;
-      
+
       await refreshProfile();
       setIsEditing(false);
       toast({ title: "Profile updated!", description: "Your changes have been saved." });
@@ -197,12 +199,12 @@ const ProfilePage = () => {
 
   const handlePromptSave = async () => {
     if (!editingPrompt || !user) return;
-    
-    const updatedPrompts = prompts.map(p => 
+
+    const updatedPrompts = prompts.map(p =>
       p.id === editingPrompt ? { ...p, answer: tempPromptAnswer } : p
     );
     setPrompts(updatedPrompts);
-    
+
     try {
       await supabase
         .from('profiles')
@@ -213,10 +215,39 @@ const ProfilePage = () => {
     } catch (error) {
       console.error('Error saving prompt:', error);
     }
-    
+
     setEditingPrompt(null);
     setTempPromptAnswer("");
     await refreshProfile();
+  };
+
+  const handleSavePrompts = async (newPrompts: { question: string; answer: string }[]) => {
+    // Always update local state so UI reflects changes immediately
+    const mappedPrompts = newPrompts.map((p, i) => ({
+      id: String(i),
+      prompt: p.question,
+      answer: p.answer,
+    }));
+    setPrompts(mappedPrompts);
+
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          prompts: newPrompts.map(p => ({ question: p.question, answer: p.answer }))
+        })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      await refreshProfile();
+      toast({ title: "Prompts updated!", description: "Your prompts have been saved." });
+    } catch (error) {
+      console.error('Error saving prompts:', error);
+      toast({ title: "Error", description: "Failed to save prompts.", variant: "destructive" });
+    }
   };
 
   const handleInterestToggle = (id: string) => {
@@ -312,7 +343,7 @@ const ProfilePage = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
+
       <div className="mx-auto max-w-6xl px-6 pb-24 pt-28 md:px-12 md:pt-32 lg:px-20">
         {/* Header */}
         <motion.div
@@ -338,17 +369,15 @@ const ProfilePage = () => {
         <div className="mb-10 flex gap-1 rounded-full bg-muted p-1">
           <button
             onClick={() => setActiveTab("profile")}
-            className={`flex-1 rounded-full py-3 text-sm font-medium transition-all ${
-              activeTab === "profile" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
-            }`}
+            className={`flex-1 rounded-full py-3 text-sm font-medium transition-all ${activeTab === "profile" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+              }`}
           >
             Profile
           </button>
           <button
             onClick={() => setActiveTab("settings")}
-            className={`flex-1 rounded-full py-3 text-sm font-medium transition-all ${
-              activeTab === "settings" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
-            }`}
+            className={`flex-1 rounded-full py-3 text-sm font-medium transition-all ${activeTab === "settings" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+              }`}
           >
             Settings
           </button>
@@ -358,7 +387,7 @@ const ProfilePage = () => {
           <div className="grid gap-8 lg:grid-cols-3">
             {/* Profile Header */}
             <div className="space-y-6 lg:col-span-1">
-              <motion.div 
+              <motion.div
                 className="rounded-2xl border border-border bg-card p-6 text-center"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -367,7 +396,7 @@ const ProfilePage = () => {
                   <div className="h-32 w-32 overflow-hidden rounded-3xl">
                     <img src={mainPhoto} alt={profile?.name} className="h-full w-full object-cover" />
                   </div>
-                  <button 
+                  <button
                     onClick={() => setIsEditingPhotos(true)}
                     className="absolute -bottom-2 -right-2 flex h-10 w-10 items-center justify-center rounded-full bg-foreground text-background shadow-lg transition-transform hover:scale-105"
                   >
@@ -384,7 +413,7 @@ const ProfilePage = () => {
                 <div className="mt-3 flex items-center justify-center gap-2">
                   <RatingBadge rating={profile?.jain_rating || 0} size="sm" />
                 </div>
-                
+
                 <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-sm text-muted-foreground">
                   {profile?.location && (
                     <span className="flex items-center gap-1">
@@ -409,7 +438,7 @@ const ProfilePage = () => {
               </motion.div>
 
               {/* Photo Gallery */}
-              <motion.div 
+              <motion.div
                 className="rounded-2xl border border-border bg-card p-6"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -417,7 +446,7 @@ const ProfilePage = () => {
               >
                 <div className="mb-4 flex items-center justify-between">
                   <h3 className="font-medium">Photos</h3>
-                  <button 
+                  <button
                     onClick={() => setIsEditingPhotos(true)}
                     className="text-sm font-medium text-primary"
                   >
@@ -432,7 +461,7 @@ const ProfilePage = () => {
                       </div>
                     ))}
                     {photos.length < 6 && (
-                      <button 
+                      <button
                         onClick={() => setIsEditingPhotos(true)}
                         className="flex aspect-[3/4] flex-col items-center justify-center rounded-xl border-2 border-dashed border-border text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
                       >
@@ -442,7 +471,7 @@ const ProfilePage = () => {
                     )}
                   </div>
                 ) : (
-                  <button 
+                  <button
                     onClick={() => setIsEditingPhotos(true)}
                     className="flex w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-border py-8 text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
                   >
@@ -456,7 +485,7 @@ const ProfilePage = () => {
             {/* Profile Details */}
             <div className="space-y-6 lg:col-span-2">
               {/* Spiritual Journey */}
-              <motion.div 
+              <motion.div
                 className="rounded-2xl border border-border bg-card p-6"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -466,14 +495,14 @@ const ProfilePage = () => {
                   <Sparkles className="h-5 w-5 text-primary" />
                   <h3 className="font-medium">My Spiritual Journey</h3>
                 </div>
-                <ChauviharWidget 
-                  chauviharLevel={profile?.chauvihar_level || "moderate"} 
-                  dietaryPreference={profile?.dietary_preference || "vegetarian"} 
+                <ChauviharWidget
+                  chauviharLevel={profile?.chauvihar_level || "moderate"}
+                  dietaryPreference={profile?.dietary_preference || "vegetarian"}
                 />
               </motion.div>
 
               {/* Interest Stamps */}
-              <motion.div 
+              <motion.div
                 className="rounded-2xl border border-border bg-card p-6"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -481,51 +510,63 @@ const ProfilePage = () => {
               >
                 <div className="mb-4 flex items-center justify-between">
                   <h3 className="font-medium">My Interests</h3>
-                  <button 
+                  <button
                     onClick={() => setIsEditingInterests(true)}
                     className="text-sm font-medium text-primary"
                   >
                     Edit
                   </button>
                 </div>
-                <InterestStamps 
-                  stamps={defaultInterestStamps} 
-                  selectedIds={profile?.interests || []} 
-                  readonly 
+                <InterestStamps
+                  stamps={defaultInterestStamps}
+                  selectedIds={profile?.interests || []}
+                  readonly
                 />
               </motion.div>
 
-              {/* Vibe Cards */}
-              <motion.div 
+              <motion.div
                 className="rounded-2xl border border-border bg-card p-6"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
               >
-                <div className="mb-4 flex items-center gap-2">
-                  <Heart className="h-5 w-5 text-primary" />
-                  <h3 className="font-medium">My Vibe</h3>
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Heart className="h-5 w-5 text-primary" />
+                    <h3 className="font-medium">My Vibe</h3>
+                  </div>
+                  <button
+                    onClick={() => setIsEditingPrompts(true)}
+                    className="text-sm font-medium text-primary"
+                  >
+                    {prompts.length > 0 ? "Edit" : "Add"}
+                  </button>
                 </div>
                 {prompts.length > 0 ? (
                   <div className="space-y-3">
                     {prompts.map((prompt) => (
-                      <PromptCard 
-                        key={prompt.id} 
-                        prompt={prompt.prompt} 
+                      <PromptCard
+                        key={prompt.id}
+                        prompt={prompt.prompt}
                         answer={prompt.answer}
-                        onEdit={() => handlePromptEdit(prompt.id)}
+                        onEdit={() => setIsEditingPrompts(true)}
                       />
                     ))}
                   </div>
                 ) : (
-                  <p className="text-center text-muted-foreground py-4">
-                    No prompts added yet. Complete onboarding to add prompts.
-                  </p>
+                  <button
+                    onClick={() => setIsEditingPrompts(true)}
+                    className="flex w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-border py-8 text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                  >
+                    <span className="text-2xl">✨</span>
+                    <span className="mt-2 text-sm font-medium">Add prompts to show your personality</span>
+                    <span className="mt-1 text-xs">Choose up to 3 prompts</span>
+                  </button>
                 )}
               </motion.div>
 
               {/* Education & Career */}
-              <motion.div 
+              <motion.div
                 className="rounded-2xl border border-border bg-card p-6"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -536,7 +577,7 @@ const ProfilePage = () => {
                     <GraduationCap className="h-5 w-5 text-primary" />
                     <h3 className="font-medium">Education & Career</h3>
                   </div>
-                  <button 
+                  <button
                     onClick={handleOpenCareerEdit}
                     className="text-sm font-medium text-primary"
                   >
@@ -568,7 +609,7 @@ const ProfilePage = () => {
         ) : (
           <div className="mx-auto max-w-2xl space-y-6">
             {/* Privacy Settings */}
-            <motion.div 
+            <motion.div
               className="rounded-2xl border border-border bg-card p-6"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -581,7 +622,7 @@ const ProfilePage = () => {
             </motion.div>
 
             {/* Account Actions */}
-            <motion.div 
+            <motion.div
               className="rounded-2xl border border-border bg-card p-6"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -774,22 +815,22 @@ const ProfilePage = () => {
             <p className="text-sm text-muted-foreground">
               Select interests that describe you. These help us find better matches.
             </p>
-            <InterestStamps 
-              stamps={defaultInterestStamps} 
-              selectedIds={selectedInterests} 
+            <InterestStamps
+              stamps={defaultInterestStamps}
+              selectedIds={selectedInterests}
               onToggle={handleInterestToggle}
             />
             <div className="flex gap-3 pt-4">
-              <button 
+              <button
                 onClick={() => {
                   setSelectedInterests(profile?.interests || []);
                   setIsEditingInterests(false);
-                }} 
+                }}
                 className="flex-1 rounded-full border border-border py-2 text-sm hover:bg-muted"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleSaveInterests}
                 disabled={isSaving}
                 className="flex flex-1 items-center justify-center gap-2 rounded-full bg-foreground py-2 text-sm text-background disabled:opacity-50"
@@ -830,13 +871,13 @@ const ProfilePage = () => {
               />
             </div>
             <div className="flex gap-3 pt-4">
-              <button 
-                onClick={() => setIsEditingCareer(false)} 
+              <button
+                onClick={() => setIsEditingCareer(false)}
                 className="flex-1 rounded-full border border-border py-2 text-sm hover:bg-muted"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleSaveCareer}
                 disabled={isSaving}
                 className="flex flex-1 items-center justify-center gap-2 rounded-full bg-foreground py-2 text-sm text-background disabled:opacity-50"
@@ -848,6 +889,14 @@ const ProfilePage = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Prompt Picker */}
+      <PromptPicker
+        open={isEditingPrompts}
+        onOpenChange={setIsEditingPrompts}
+        currentPrompts={prompts.map(p => ({ question: p.prompt, answer: p.answer }))}
+        onSave={handleSavePrompts}
+      />
 
       <Footer />
     </div>

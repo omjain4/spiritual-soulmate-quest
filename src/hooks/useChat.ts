@@ -24,6 +24,8 @@ interface Conversation {
     id: string;
     name: string;
     avatar_url: string | null;
+    photos: string[] | null;
+    main_photo_index: number | null;
   };
   last_message?: Message;
 }
@@ -46,6 +48,15 @@ export const useChat = () => {
   const fetchConversations = useCallback(async () => {
     if (!user) return;
 
+    const { data: matches } = await supabase
+      .from("matches")
+      .select("*")
+      .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`);
+
+    const matchedUserIds = (matches || []).map(m =>
+      m.user1_id === user.id ? m.user2_id : m.user1_id
+    );
+
     const { data, error } = await supabase
       .from("conversations")
       .select("*")
@@ -57,16 +68,21 @@ export const useChat = () => {
       return;
     }
 
+    const matchedConversations = (data || []).filter(conv => {
+      const otherUserId = conv.participant1_id === user.id ? conv.participant2_id : conv.participant1_id;
+      return matchedUserIds.includes(otherUserId);
+    });
+
     // Fetch other user profiles for each conversation
     const conversationsWithProfiles = await Promise.all(
-      (data || []).map(async (conv) => {
-        const otherUserId = conv.participant1_id === user.id 
-          ? conv.participant2_id 
+      matchedConversations.map(async (conv) => {
+        const otherUserId = conv.participant1_id === user.id
+          ? conv.participant2_id
           : conv.participant1_id;
 
         const { data: profile } = await supabase
           .from("profiles")
-          .select("user_id, name, avatar_url")
+          .select("user_id, name, avatar_url, photos, main_photo_index")
           .eq("user_id", otherUserId)
           .maybeSingle();
 
@@ -84,7 +100,9 @@ export const useChat = () => {
           other_user: profile ? {
             id: profile.user_id,
             name: profile.name,
-            avatar_url: profile.avatar_url,
+            avatar_url: profile.photos?.[profile.main_photo_index || 0] || profile.avatar_url,
+            photos: profile.photos,
+            main_photo_index: profile.main_photo_index,
           } : undefined,
           last_message: lastMessageData || undefined,
         };
@@ -273,12 +291,12 @@ export const useChat = () => {
         },
         (payload) => {
           const newMessage = payload.new as Message;
-          
+
           // Add to messages if in active conversation
           if (newMessage.conversation_id === activeConversationId) {
             setMessages((prev) => [...prev, newMessage]);
           }
-          
+
           // Refresh conversations to update last message
           fetchConversations();
         }

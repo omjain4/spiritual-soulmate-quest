@@ -34,7 +34,7 @@ const getEmailContent = (type: string, fromName: string, toName: string, message
                 <p style="color: #666; font-size: 16px; margin: 0 0 30px 0;">
                   Hi ${toName}, you and <strong>${fromName}</strong> have liked each other!
                 </p>
-                <a href="https://jainjodi.lovable.app/chat" style="display: inline-block; background-color: #1a1a1a; color: white; padding: 14px 32px; text-decoration: none; border-radius: 30px; font-weight: 600;">
+                <a href="https://jainjodi.com/chat" style="display: inline-block; background-color: #1a1a1a; color: white; padding: 14px 32px; text-decoration: none; border-radius: 30px; font-weight: 600;">
                   Start Chatting
                 </a>
               </div>
@@ -69,7 +69,7 @@ const getEmailContent = (type: string, fromName: string, toName: string, message
                     "${messagePreview || 'Sent you a message'}"
                   </p>
                 </div>
-                <a href="https://jainjodi.lovable.app/chat" style="display: inline-block; background-color: #1a1a1a; color: white; padding: 14px 32px; text-decoration: none; border-radius: 30px; font-weight: 600;">
+                <a href="https://jainjodi.com/chat" style="display: inline-block; background-color: #1a1a1a; color: white; padding: 14px 32px; text-decoration: none; border-radius: 30px; font-weight: 600;">
                   Reply Now
                 </a>
               </div>
@@ -99,7 +99,7 @@ const getEmailContent = (type: string, fromName: string, toName: string, message
                 <p style="color: #666; font-size: 16px; margin: 0 0 30px 0;">
                   Hi ${toName}, <strong>${fromName}</strong> liked your profile!
                 </p>
-                <a href="https://jainjodi.lovable.app/likes" style="display: inline-block; background-color: #1a1a1a; color: white; padding: 14px 32px; text-decoration: none; border-radius: 30px; font-weight: 600;">
+                <a href="https://jainjodi.com/likes" style="display: inline-block; background-color: #1a1a1a; color: white; padding: 14px 32px; text-decoration: none; border-radius: 30px; font-weight: 600;">
                   View Profile
                 </a>
               </div>
@@ -126,7 +126,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-  
+
   if (!RESEND_API_KEY) {
     console.error("RESEND_API_KEY is not configured");
     return new Response(
