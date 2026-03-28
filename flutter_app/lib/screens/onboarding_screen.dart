@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../core/theme.dart';
 import '../core/constants.dart';
 import '../core/supabase_client.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../providers/auth_provider.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -86,19 +88,36 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     }
   }
 
+  bool _isUploadingPhoto = false;
+
   Future<void> _uploadPhoto() async {
-    final picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.gallery, maxWidth: 1200);
-    if (image == null) return;
+    try {
+      final picker = ImagePicker();
+      final image = await picker.pickImage(source: ImageSource.gallery, maxWidth: 1200);
+      if (image == null) return;
 
-    final bytes = await image.readAsBytes();
-    final userId = supabase.auth.currentUser!.id;
-    final path = '$userId/${DateTime.now().millisecondsSinceEpoch}.jpg';
+      setState(() => _isUploadingPhoto = true);
+      
+      final file = File(image.path);
+      final userId = supabase.auth.currentUser!.id;
+      final path = '$userId/${DateTime.now().millisecondsSinceEpoch}.jpg';
 
-    await supabase.storage.from('photos').uploadBinary(path, bytes);
-    final url = supabase.storage.from('photos').getPublicUrl(path);
+      await uploadFileToSupabase('chat-media', path, file);
+      final url = supabase.storage.from('chat-media').getPublicUrl(path);
 
-    setState(() => _photos.add(url));
+      if (mounted) {
+        setState(() {
+          _photos.add(url);
+          _isUploadingPhoto = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Upload error: $e');
+      if (mounted) {
+        setState(() => _isUploadingPhoto = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to upload photo: $e')));
+      }
+    }
   }
 
   int _calculateRating() {
@@ -815,18 +834,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             )),
             if (_photos.length < 6)
               GestureDetector(
-                onTap: _uploadPhoto,
+                onTap: _isUploadingPhoto ? null : _uploadPhoto,
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: AppColors.border, width: 2),
                   ),
-                  child: const Column(
+                  child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.camera_alt_outlined, color: AppColors.mutedForeground, size: 28),
-                      SizedBox(height: 4),
-                      Text('Add', style: TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
+                      if (_isUploadingPhoto)
+                        const SizedBox(
+                          width: 28, height: 28,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                        )
+                      else ...[
+                        const Icon(Icons.camera_alt_outlined, color: AppColors.mutedForeground, size: 28),
+                        const SizedBox(height: 4),
+                        const Text('Add', style: TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
+                      ],
                     ],
                   ),
                 ),

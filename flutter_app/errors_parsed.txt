@@ -1,0 +1,2 @@
+C:\Users\Om Jain\OneDrive\Desktop\jain tinder\spiritual-soulmate-quest\flutter_app\lib\screens\discover_screen.dart:551 - The getter 'primaryForeground' isn't defined for the type 'AppColors'.
+C:\Users\Om Jain\OneDrive\Desktop\jain tinder\spiritual-soulmate-quest\flutter_app\test\widget_test.dart:16 - The name 'MyApp' isn't a class.

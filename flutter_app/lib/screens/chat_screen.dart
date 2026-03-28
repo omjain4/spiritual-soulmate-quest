@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -137,11 +138,11 @@ class _ChatScreenState extends State<ChatScreen> {
     final image = await picker.pickImage(source: ImageSource.gallery, maxWidth: 1200);
     if (image == null) return;
 
-    final bytes = await image.readAsBytes();
+    final file = File(image.path);
     final path = '$_userId/${DateTime.now().millisecondsSinceEpoch}.jpg';
 
     try {
-      await supabase.storage.from('chat-media').uploadBinary(path, bytes);
+      await uploadFileToSupabase('chat-media', path, file);
       final url = supabase.storage.from('chat-media').getPublicUrl(path);
 
       await supabase.from('messages').insert({

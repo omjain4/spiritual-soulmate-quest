@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 const supabaseUrl = 'https://wsgbfdwxaglphqwwjhii.supabase.co';
@@ -11,4 +14,27 @@ Future<void> initSupabase() async {
     url: supabaseUrl,
     anonKey: supabaseAnonKey,
   );
+}
+
+Future<void> uploadFileToSupabase(String bucket, String path, File file) async {
+  final endpoint = '$supabaseUrl/storage/v1/object/$bucket/$path';
+  final token = supabase.auth.currentSession?.accessToken ?? supabaseAnonKey;
+  
+  final request = http.MultipartRequest('POST', Uri.parse(endpoint));
+  request.headers.addAll({
+    'Authorization': 'Bearer $token',
+    'apikey': supabaseAnonKey,
+  });
+
+  request.files.add(await http.MultipartFile.fromPath(
+    'file',
+    file.path,
+  ));
+
+  final response = await request.send();
+  final respBody = await response.stream.bytesToString();
+
+  if (response.statusCode >= 400) {
+    throw Exception('Failed to upload via custom HTTP. Status: ${response.statusCode}, Body: $respBody');
+  }
 }

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import '../core/theme.dart';
 import '../core/constants.dart';
 import '../core/supabase_client.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../providers/auth_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -190,12 +192,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: AppColors.border, width: 2),
                     ),
-                    child: const Column(
+                    child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.add, color: AppColors.mutedForeground),
-                        SizedBox(height: 4),
-                        Text('Add', style: TextStyle(fontSize: 11, color: AppColors.mutedForeground)),
+                        if (_isUploadingPhoto)
+                          const SizedBox(
+                            width: 24, height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                          )
+                        else ...[
+                          const Icon(Icons.add, color: AppColors.mutedForeground),
+                          const SizedBox(height: 4),
+                          const Text('Add', style: TextStyle(fontSize: 11, color: AppColors.mutedForeground)),
+                        ],
                       ],
                     ),
                   ),
@@ -354,24 +363,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  bool _isUploadingPhoto = false;
+
   Future<void> _uploadPhoto() async {
-    final picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.gallery, maxWidth: 1200);
-    if (image == null) return;
-
-    final auth = context.read<AuthProvider>();
-    final bytes = await image.readAsBytes();
-    final userId = supabase.auth.currentUser!.id;
-    final path = '$userId/${DateTime.now().millisecondsSinceEpoch}.jpg';
-
     try {
-      await supabase.storage.from('photos').uploadBinary(path, bytes);
-      final url = supabase.storage.from('photos').getPublicUrl(path);
+      final picker = ImagePicker();
+      final image = await picker.pickImage(source: ImageSource.gallery, maxWidth: 1200);
+      if (image == null) return;
+
+      setState(() => _isUploadingPhoto = true);
+
+      final auth = context.read<AuthProvider>();
+      final file = File(image.path);
+      final userId = supabase.auth.currentUser!.id;
+      final path = '$userId/${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+      await uploadFileToSupabase('chat-media', path, file);
+      final url = supabase.storage.from('chat-media').getPublicUrl(path);
       final currentPhotos = auth.profile?.photos ?? [];
       await auth.updateProfile({'photos': [...currentPhotos, url]});
+
+      if (mounted) setState(() => _isUploadingPhoto = false);
     } catch (e) {
+      debugPrint('Upload error: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+        setState(() => _isUploadingPhoto = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to upload photo: $e')));
       }
     }
   }
